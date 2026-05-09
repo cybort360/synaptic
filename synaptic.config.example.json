@@ -1,0 +1,31 @@
+{
+  "watchPaths": [
+    "/path/to/your/project"
+  ],
+  "excludePatterns": [
+    "**/node_modules/**",
+    "**/.git/**",
+    "**/*.env"
+  ],
+  "watchers": {
+    "files": true,
+    "terminal": true,
+    "windows": true,
+    "shellHistory": true
+  },
+  "fromLang": "",
+  "toLang": "",
+  "ollamaBaseUrl": "http://localhost:11434",
+  "ollamaModel": "llama3.2",
+  "ollamaReasoningModel": "llama3.1:8b",
+  "reasoningModelApiKey": "",
+  "reasoningModelEndpoint": "https://generativelanguage.googleapis.com/v1beta",
+  "reasoningModel": "gemini-2.0-flash",
+  "dbPath": "./synaptic.db",
+  "port": 3777,
+  "retentionDays": {
+    "low": 7,
+    "medium": 30,
+    "high": 365
+  }
+}

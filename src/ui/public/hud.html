@@ -1,0 +1,840 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Synaptic HUD</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg:       #0a0d11;
+    --panel:    #11151b;
+    --panel-2:  #161b22;
+    --line:     #232a34;
+    --line-2:   #2e3744;
+    --ink:      #e6ebf2;
+    --ink-2:    #b6bfcc;
+    --ink-dim:  #7c8696;
+    --ink-mute: #525c6c;
+    --amber:    #ffb347;
+    --green:    #43d17a;
+    --red:      #ff6b6b;
+    --blue:     #6aa9ff;
+    --radius:   8px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(--ink); }
+  body {
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-size: 12px; line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    border: 1px solid var(--line-2);
+    border-radius: var(--radius);
+    user-select: none;
+  }
+
+  /* ── Shell ── */
+  .hud { display: flex; flex-direction: column; height: 100vh; }
+
+  /* ── Title bar (draggable) ── */
+  .titlebar {
+    -webkit-app-region: drag;
+    height: 38px;
+    background: var(--panel);
+    border-bottom: 1px solid var(--line);
+    border-radius: var(--radius) var(--radius) 0 0;
+    display: flex; align-items: center; padding: 0 10px; gap: 8px;
+    flex-shrink: 0;
+  }
+  .titlebar .logo {
+    color: var(--amber); font-size: 10px; font-weight: 600;
+    letter-spacing: 0.18em; text-transform: uppercase;
+  }
+  .titlebar .spacer { flex: 1; }
+  .titlebar .pill {
+    -webkit-app-region: no-drag;
+    font-size: 9px; color: var(--ink-mute); letter-spacing: 0.08em;
+    background: var(--bg); border: 1px solid var(--line);
+    padding: 1px 7px; border-radius: 10px;
+  }
+  .titlebar .icon-btn {
+    -webkit-app-region: no-drag;
+    width: 22px; height: 22px; border-radius: 4px;
+    border: 1px solid var(--line); background: transparent;
+    color: var(--ink-mute); cursor: pointer;
+    display: grid; place-items: center;
+    transition: color .12s, border-color .12s;
+    font-size: 12px; line-height: 1;
+  }
+  .titlebar .icon-btn:hover { color: var(--red); border-color: var(--red); }
+
+  /* ── Mode tabs ── */
+  .tabs {
+    display: flex; border-bottom: 1px solid var(--line);
+    background: var(--panel); flex-shrink: 0;
+    -webkit-app-region: no-drag;
+  }
+  .tab {
+    flex: 1; padding: 7px 0; font-size: 10px; font-weight: 600;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--ink-mute); background: none; border: none;
+    cursor: pointer; transition: color .12s;
+    border-bottom: 2px solid transparent;
+  }
+  .tab.active { color: var(--amber); border-bottom-color: var(--amber); }
+  .tab:hover:not(.active) { color: var(--ink-dim); }
+
+  /* ── Bridge panel ── */
+  .bridge-panel {
+    flex: 1; display: none; flex-direction: column; overflow: hidden;
+  }
+  .bridge-panel.visible { display: flex; }
+  .bridge-scroll {
+    flex: 1; overflow-y: auto; padding: 12px;
+    scroll-behavior: smooth;
+  }
+  .bridge-scroll::-webkit-scrollbar { width: 3px; }
+  .bridge-scroll::-webkit-scrollbar-thumb { background: var(--line-2); border-radius: 2px; }
+  .bridge-input {
+    border-top: 1px solid var(--line); padding: 8px 10px;
+    background: var(--panel); flex-shrink: 0; display: flex; flex-direction: column; gap: 6px;
+  }
+  .bridge-row { display: flex; gap: 6px; align-items: flex-end; }
+  #bridge-error {
+    flex: 1; background: var(--bg); border: 1px solid var(--line);
+    color: var(--ink); font-family: inherit; font-size: 11px;
+    padding: 7px 9px; border-radius: 4px; resize: none;
+    min-height: 52px; max-height: 120px; outline: none;
+    line-height: 1.5; transition: border-color .12s; user-select: text;
+  }
+  #bridge-error:focus { border-color: var(--line-2); }
+  #bridge-error::placeholder { color: var(--ink-mute); font-size: 11px; }
+  .lang-select {
+    background: var(--bg); border: 1px solid var(--line); color: var(--ink-2);
+    font-family: inherit; font-size: 11px; padding: 4px 8px; border-radius: 4px;
+    outline: none; cursor: pointer;
+  }
+  .bridge-answer {
+    background: var(--panel-2); border: 1px solid var(--line);
+    border-radius: 6px; padding: 10px 12px; font-size: 11px;
+    color: var(--ink-2); line-height: 1.7;
+    word-break: break-word; user-select: text; min-height: 40px;
+  }
+  .bridge-answer.thinking { color: var(--ink-mute); font-style: italic; }
+  .bridge-label {
+    font-size: 9px; color: var(--ink-mute); letter-spacing: 0.1em;
+    text-transform: uppercase; margin-bottom: 6px;
+  }
+
+  /* ── Response scroll area ── */
+  .chat {
+    flex: 1; overflow-y: auto; padding: 12px;
+    display: flex; flex-direction: column; gap: 10px;
+    scroll-behavior: smooth;
+  }
+  .chat::-webkit-scrollbar { width: 3px; }
+  .chat::-webkit-scrollbar-thumb { background: var(--line-2); border-radius: 2px; }
+  .chat::-webkit-scrollbar-track { background: transparent; }
+
+  /* empty state */
+  .empty {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 10px; color: var(--ink-mute); text-align: center; padding: 20px;
+    pointer-events: none;
+  }
+  .empty svg { opacity: 0.3; }
+  .empty p { font-size: 11px; line-height: 1.6; max-width: 220px; }
+  .empty .hint {
+    font-size: 9px; color: var(--ink-mute); letter-spacing: 0.12em;
+    text-transform: uppercase; opacity: 0.6;
+  }
+
+  /* message rows */
+  .msg { display: flex; flex-direction: column; gap: 3px; }
+
+  .msg.user .bubble {
+    align-self: flex-end;
+    background: rgba(255,179,71,.1);
+    border: 1px solid rgba(255,179,71,.25);
+    color: var(--amber);
+    padding: 7px 10px;
+    border-radius: 6px 6px 2px 6px;
+    max-width: 92%; font-size: 12px;
+    user-select: text;
+  }
+
+  .msg.ai .bubble {
+    align-self: flex-start;
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    color: var(--ink-2);
+    padding: 8px 10px;
+    border-radius: 6px 6px 6px 2px;
+    max-width: 100%; font-size: 11px; line-height: 1.65;
+    word-break: break-word;
+    user-select: text;
+  }
+  .msg.ai .bubble h1, .msg.ai .bubble h2, .msg.ai .bubble h3 {
+    color: var(--ink); font-weight: 600; margin: 10px 0 4px;
+    font-family: inherit; letter-spacing: 0.04em;
+  }
+  .msg.ai .bubble h1 { font-size: 13px; }
+  .msg.ai .bubble h2 { font-size: 12px; }
+  .msg.ai .bubble h3 { font-size: 11px; color: var(--amber); }
+  .msg.ai .bubble p { margin: 4px 0; }
+  .msg.ai .bubble ul, .msg.ai .bubble ol { margin: 4px 0 4px 16px; }
+  .msg.ai .bubble li { margin: 2px 0; }
+  .msg.ai .bubble code {
+    background: var(--panel); border: 1px solid var(--line);
+    padding: 1px 4px; border-radius: 3px; font-family: inherit;
+    font-size: 10px; color: var(--green);
+  }
+  .msg.ai .bubble pre {
+    background: var(--panel); border: 1px solid var(--line);
+    border-radius: 4px; padding: 8px 10px; margin: 6px 0;
+    overflow-x: auto; white-space: pre;
+  }
+  .msg.ai .bubble pre code {
+    background: none; border: none; padding: 0;
+    color: var(--ink-2); font-size: 10px;
+  }
+  .msg.ai .bubble strong { color: var(--ink); font-weight: 600; }
+  .msg.ai .bubble em { color: var(--ink-dim); font-style: italic; }
+  .msg.ai .bubble hr { border: none; border-top: 1px solid var(--line); margin: 8px 0; }
+  .msg.ai .bubble table { border-collapse: collapse; margin: 6px 0; width: 100%; }
+  .msg.ai .bubble th, .msg.ai .bubble td {
+    border: 1px solid var(--line); padding: 3px 8px; font-size: 10px; text-align: left;
+  }
+  .msg.ai .bubble th { background: var(--panel); color: var(--ink); font-weight: 600; }
+  .bridge-answer h1, .bridge-answer h2, .bridge-answer h3 {
+    color: var(--ink); font-weight: 600; margin: 10px 0 4px; font-family: inherit;
+  }
+  .bridge-answer h2 { font-size: 12px; }
+  .bridge-answer h3 { font-size: 11px; color: var(--amber); }
+  .bridge-answer p { margin: 4px 0; }
+  .bridge-answer ul, .bridge-answer ol { margin: 4px 0 4px 16px; }
+  .bridge-answer li { margin: 2px 0; }
+  .bridge-answer code {
+    background: var(--panel); border: 1px solid var(--line);
+    padding: 1px 4px; border-radius: 3px; font-size: 10px; color: var(--green);
+  }
+  .bridge-answer pre {
+    background: var(--panel); border: 1px solid var(--line);
+    border-radius: 4px; padding: 8px 10px; margin: 6px 0; overflow-x: auto; white-space: pre;
+  }
+  .bridge-answer pre code { background: none; border: none; padding: 0; color: var(--ink-2); }
+  .bridge-answer strong { color: var(--ink); font-weight: 600; }
+  .bridge-answer em { color: var(--ink-dim); font-style: italic; }
+  .bridge-answer hr { border: none; border-top: 1px solid var(--line); margin: 8px 0; }
+  .bridge-answer table { border-collapse: collapse; margin: 6px 0; width: 100%; }
+  .bridge-answer th, .bridge-answer td {
+    border: 1px solid var(--line); padding: 3px 8px; font-size: 10px; text-align: left;
+  }
+  .bridge-answer th { background: var(--panel); color: var(--ink); font-weight: 600; }
+
+  .msg.alert .bubble {
+    align-self: flex-start;
+    background: rgba(255,107,107,.07);
+    border: 1px solid rgba(255,107,107,.22);
+    color: var(--red);
+    padding: 7px 10px;
+    border-radius: 6px; font-size: 11px;
+    user-select: text;
+  }
+
+  .msg .meta {
+    font-size: 9px; color: var(--ink-mute);
+    letter-spacing: 0.05em;
+    padding: 0 2px;
+  }
+  .msg.user .meta { align-self: flex-end; }
+
+  /* thinking dots */
+  .thinking { display: flex; gap: 4px; align-items: center; padding: 6px 2px; }
+  .thinking span {
+    width: 5px; height: 5px; border-radius: 50%; background: var(--amber);
+    animation: pulse 1.2s ease-in-out infinite;
+  }
+  .thinking span:nth-child(2) { animation-delay: .2s; }
+  .thinking span:nth-child(3) { animation-delay: .4s; }
+  @keyframes pulse { 0%,80%,100% { opacity:.15; transform:scale(.8); } 40% { opacity:1; transform:scale(1); } }
+
+  /* ── Image preview ── */
+  .img-preview {
+    padding: 6px 10px 0;
+    background: var(--panel);
+    display: none;
+  }
+  .img-preview.visible { display: block; }
+  .img-thumb-wrap {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--bg); border: 1px solid var(--line);
+    border-radius: 4px; padding: 4px 8px 4px 4px;
+  }
+  .img-thumb { width: 36px; height: 36px; object-fit: cover; border-radius: 3px; }
+  .img-remove {
+    background: none; border: none; color: var(--ink-mute);
+    cursor: pointer; font-size: 14px; line-height: 1; padding: 0;
+    transition: color .12s;
+  }
+  .img-remove:hover { color: var(--red); }
+
+  /* ── Input area ── */
+  .input-row {
+    border-top: 1px solid var(--line);
+    padding: 8px 10px;
+    display: flex; gap: 7px; align-items: flex-end;
+    background: var(--panel);
+    flex-shrink: 0;
+  }
+  #q {
+    flex: 1;
+    background: var(--bg);
+    border: 1px solid var(--line);
+    color: var(--ink);
+    font-family: inherit; font-size: 12px;
+    padding: 7px 9px;
+    border-radius: 4px;
+    resize: none; min-height: 34px; max-height: 96px;
+    outline: none; line-height: 1.45;
+    transition: border-color .12s;
+    user-select: text;
+  }
+  #q:focus { border-color: var(--line-2); }
+  #q::placeholder { color: var(--ink-mute); }
+
+  .send {
+    width: 34px; height: 34px; flex-shrink: 0;
+    background: var(--amber); border: none; border-radius: 4px;
+    color: #0a0d11; cursor: pointer;
+    display: grid; place-items: center;
+    transition: opacity .12s;
+  }
+  .send:hover { opacity: .82; }
+  .send:disabled { opacity: .25; cursor: not-allowed; }
+
+  /* ── Voice button ── */
+  .mic-btn {
+    width: 34px; height: 34px; flex-shrink: 0;
+    background: var(--panel); border: 1px solid var(--line);
+    color: var(--ink-mute); border-radius: 4px; cursor: pointer;
+    display: grid; place-items: center;
+    transition: all .12s;
+  }
+  .mic-btn:hover { border-color: var(--line-2); color: var(--ink); }
+  .mic-btn.recording {
+    background: rgba(255,107,107,.15);
+    border-color: var(--red); color: var(--red);
+    animation: mic-pulse 1s ease-in-out infinite;
+  }
+  @keyframes mic-pulse { 0%,100% { box-shadow: 0 0 0 0 rgba(255,107,107,.4); } 50% { box-shadow: 0 0 0 6px rgba(255,107,107,0); } }
+
+  /* ── Status bar ── */
+  .statusbar {
+    height: 22px;
+    border-top: 1px solid var(--line);
+    border-radius: 0 0 var(--radius) var(--radius);
+    background: var(--bg);
+    display: flex; align-items: center; padding: 0 10px; gap: 6px;
+    flex-shrink: 0;
+  }
+  .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--ink-mute); transition: background .3s; }
+  .dot.on  { background: var(--green); }
+  .dot.warn { background: var(--amber); }
+  #status-txt { font-size: 9px; color: var(--ink-mute); letter-spacing: .08em; }
+</style>
+</head>
+<body>
+<div class="hud">
+
+  <!-- title bar -->
+  <div class="titlebar">
+    <span class="logo">⬡ synaptic</span>
+    <span class="spacer"></span>
+    <span class="pill" id="model-pill">local</span>
+    <button class="icon-btn" id="closeBtn" title="Hide  (⌘⇧S)">✕</button>
+  </div>
+
+  <!-- mode tabs -->
+  <div class="tabs">
+    <button class="tab active" id="tab-ask" onclick="switchTab('ask')">Ask</button>
+    <button class="tab" id="tab-bridge" onclick="switchTab('bridge')">Bridge</button>
+  </div>
+
+  <!-- chat -->
+  <div class="chat" id="chat">
+    <div class="empty" id="empty">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/>
+      </svg>
+      <p>Ask about your code, recent work, or habits.</p>
+      <span class="hint">Enter to send · Shift+Enter for newline</span>
+    </div>
+  </div>
+
+  <!-- bridge panel -->
+  <div class="bridge-panel" id="bridge-panel">
+    <div class="bridge-scroll" id="bridge-scroll">
+      <div class="bridge-label">Mentor Note</div>
+      <div class="bridge-answer" id="bridge-answer" style="color:var(--ink-mute);font-style:italic">
+        Paste an error or describe what's confusing. Synaptic will explain it using your coding history.
+      </div>
+    </div>
+    <div class="bridge-input">
+      <textarea id="bridge-error" placeholder="Paste an error or describe what's confusing…" rows="3"></textarea>
+      <div class="bridge-row">
+        <input class="lang-select" id="bridge-lang" type="text" placeholder="target lang" style="width:90px" />
+        <div style="flex:1"></div>
+        <button class="send" id="bridge-btn" onclick="askBridge()" title="Explain (Enter)">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- image preview -->
+  <div class="img-preview" id="imgPreview">
+    <div class="img-thumb-wrap">
+      <img class="img-thumb" id="imgThumb" src="" alt="attached" />
+      <button class="img-remove" id="imgRemove" title="Remove image">×</button>
+    </div>
+  </div>
+
+  <!-- input -->
+  <div class="input-row">
+    <textarea id="q" placeholder="ask anything… or paste an image" rows="1"></textarea>
+    <button class="mic-btn" id="micBtn" title="Push to talk (⌘⇧V)" onclick="toggleVoice()">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="9" y="2" width="6" height="11" rx="3"/>
+        <path d="M5 10a7 7 0 0014 0M12 19v3M8 22h8"/>
+      </svg>
+    </button>
+    <button class="send" id="sendBtn" title="Send (Enter)">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+      </svg>
+    </button>
+  </div>
+
+  <!-- status bar -->
+  <div class="statusbar">
+    <div class="dot" id="dot"></div>
+    <span id="status-txt">connecting…</span>
+  </div>
+
+</div>
+
+<script>
+const chat      = document.getElementById('chat')
+const empty     = document.getElementById('empty')
+const q         = document.getElementById('q')
+const sendBtn   = document.getElementById('sendBtn')
+const dot       = document.getElementById('dot')
+const stxt      = document.getElementById('status-txt')
+const modelPill = document.getElementById('model-pill')
+const closeBtn  = document.getElementById('closeBtn')
+const imgPreview = document.getElementById('imgPreview')
+const imgThumb   = document.getElementById('imgThumb')
+const imgRemove  = document.getElementById('imgRemove')
+
+let attachedImage = null  // base64 string (no data: prefix)
+
+// ── Auto-resize ────────────────────────────────────────────────────────────
+q.addEventListener('input', () => {
+  q.style.height = 'auto'
+  q.style.height = Math.min(q.scrollHeight, 96) + 'px'
+})
+
+// ── Close ──────────────────────────────────────────────────────────────────
+closeBtn.addEventListener('click', () => window.close())
+
+// ── Image paste (Cmd+V with image on clipboard) ────────────────────────────
+document.addEventListener('paste', (e) => {
+  const items = e.clipboardData?.items
+  if (!items) return
+  for (const item of items) {
+    if (!item.type.startsWith('image/')) continue
+    const file = item.getAsFile()
+    if (!file) continue
+    const reader = new FileReader()
+    reader.onload = (ev) => {
+      const dataUrl = ev.target.result
+      // Strip the data:image/...;base64, prefix — Ollama wants raw base64
+      attachedImage = dataUrl.split(',')[1]
+      imgThumb.src = dataUrl
+      imgPreview.classList.add('visible')
+    }
+    reader.readAsDataURL(file)
+    e.preventDefault()
+    break
+  }
+})
+
+imgRemove.addEventListener('click', clearImage)
+function clearImage() {
+  attachedImage = null
+  imgThumb.src = ''
+  imgPreview.classList.remove('visible')
+}
+
+// ── WebSocket ──────────────────────────────────────────────────────────────
+let ws = null
+function connect() {
+  ws = new WebSocket(`ws://${location.host}`)
+  ws.addEventListener('open', () => { dot.className = 'dot on'; stxt.textContent = 'connected' })
+  ws.addEventListener('close', () => { dot.className = 'dot warn'; stxt.textContent = 'reconnecting…'; setTimeout(connect, 3000) })
+  ws.addEventListener('message', (e) => { try { handleWS(JSON.parse(e.data)) } catch {} })
+}
+function handleWS(msg) {
+  if (msg.type === 'stuck_detected')  appendAlert('stuck', msg.data.suggestion || 'You seem stuck — want a hint?')
+  if (msg.type === 'habit_mismatch')  appendAlert('habit', msg.data.warning || 'Old habit detected')
+  if (msg.type === 'stats' && msg.data?.ollamaModel) modelPill.textContent = msg.data.ollamaModel
+}
+connect()
+fetch('/api/config').then(r => r.json()).then(c => {
+  if (c.ollamaReasoningModel) modelPill.textContent = c.ollamaReasoningModel
+  if (c.toLang) document.getElementById('bridge-lang').value = c.toLang
+}).catch(() => {})
+
+// ── Markdown renderer ──────────────────────────────────────────────────────
+function renderMarkdown(md) {
+  // Protect code blocks and inline code from other transformations
+  const blocks = [], inlines = []
+  let html = md
+    .replace(/```[\w]*\n?([\s\S]*?)```/g, (_, c) => {
+      blocks.push(c.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'))
+      return `\x00B${blocks.length-1}\x00`
+    })
+    .replace(/`([^`\n]+)`/g, (_, c) => {
+      inlines.push(c.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'))
+      return `\x00I${inlines.length-1}\x00`
+    })
+
+  // Escape remaining HTML
+  html = html.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+
+  // Headers
+  html = html.replace(/^### (.+)$/gm, '<h3>$1</h3>')
+  html = html.replace(/^## (.+)$/gm,  '<h2>$1</h2>')
+  html = html.replace(/^# (.+)$/gm,   '<h1>$1</h1>')
+
+  // Horizontal rules
+  html = html.replace(/^[-*]{3,}$/gm, '<hr>')
+
+  // Bold + italic, bold, italic
+  html = html.replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>')
+  html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+  html = html.replace(/\*([^*\n]+)\*/g,  '<em>$1</em>')
+
+  // Tables (| col | col | rows)
+  html = html.replace(/(\|[^\n]+\|\n?)+/g, tableBlock => {
+    const rows = tableBlock.trim().split('\n')
+    let out = '<table>'
+    rows.forEach((row, i) => {
+      if (/^[\s|:-]+$/.test(row)) return
+      const tag = (i === 0 && rows.length > 1 && /^[\s|:-]+$/.test(rows[1] || '')) ? 'th' : 'td'
+      const cells = row.split('|').slice(1,-1).map(c => `<${tag}>${c.trim()}</${tag}>`).join('')
+      out += `<tr>${cells}</tr>`
+    })
+    return out + '</table>'
+  })
+
+  // Unordered lists
+  html = html.replace(/(^[ \t]*[-*+] .+\n?)+/gm, block => {
+    const items = block.trim().split('\n').map(l => `<li>${l.replace(/^[ \t]*[-*+] /,'')}</li>`).join('')
+    return `<ul>${items}</ul>`
+  })
+
+  // Ordered lists
+  html = html.replace(/(^[ \t]*\d+\. .+\n?)+/gm, block => {
+    const items = block.trim().split('\n').map(l => `<li>${l.replace(/^[ \t]*\d+\. /,'')}</li>`).join('')
+    return `<ol>${items}</ol>`
+  })
+
+  // Paragraphs
+  html = html.split(/\n{2,}/).map(chunk => {
+    chunk = chunk.trim()
+    if (!chunk) return ''
+    if (/^<(h[1-6]|ul|ol|pre|table|hr)/.test(chunk)) return chunk
+    return '<p>' + chunk.replace(/\n/g, '<br>') + '</p>'
+  }).join('\n')
+
+  // Restore protected segments
+  html = html.replace(/\x00I(\d+)\x00/g, (_, i) => `<code>${inlines[i]}</code>`)
+  html = html.replace(/\x00B(\d+)\x00/g, (_, i) => `<pre><code>${blocks[i]}</code></pre>`)
+  return html
+}
+
+// ── Helpers ────────────────────────────────────────────────────────────────
+const esc = (s) => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+const now = () => new Date().toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit' })
+const scrollBottom = () => { chat.scrollTop = chat.scrollHeight }
+const showChat = () => { empty.style.display = 'none' }
+
+function addMsg(role, text) {
+  showChat()
+  const div = document.createElement('div')
+  div.className = `msg ${role}`
+  div.innerHTML = `<div class="bubble">${esc(text)}</div><div class="meta">${now()}</div>`
+  chat.appendChild(div)
+  scrollBottom()
+  return div
+}
+
+function addStreamingMsg() {
+  showChat()
+  const div = document.createElement('div')
+  div.className = 'msg ai'
+  div.innerHTML = '<div class="bubble"></div><div class="meta">' + now() + '</div>'
+  chat.appendChild(div)
+  scrollBottom()
+  return div.querySelector('.bubble')
+}
+
+function addThinking() {
+  showChat()
+  const div = document.createElement('div')
+  div.className = 'msg ai'
+  div.innerHTML = '<div class="thinking"><span></span><span></span><span></span></div>'
+  chat.appendChild(div)
+  scrollBottom()
+  return div
+}
+
+function appendAlert(type, text) {
+  showChat()
+  const div = document.createElement('div')
+  div.className = 'msg alert'
+  const label = type === 'stuck' ? '⚠ stuck detected' : '⚡ habit warning'
+  div.innerHTML = `<div class="bubble">[${label}] ${esc(text)}</div><div class="meta">${now()}</div>`
+  chat.appendChild(div)
+  scrollBottom()
+}
+
+// ── Ask (streaming) ────────────────────────────────────────────────────────
+async function ask() {
+  const text = q.value.trim()
+  if (!text) return
+  q.value = ''
+  q.style.height = 'auto'
+  sendBtn.disabled = true
+
+  // Show user message (with image indicator if attached)
+  addMsg('user', text + (attachedImage ? ' 📎' : ''))
+
+  const image = attachedImage
+  clearImage()
+
+  const thinking = addThinking()
+  let bubble = null
+  let fullText = ''
+
+  try {
+    const res = await fetch('/api/query', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ question: text, ...(image ? { imageBase64: image } : {}) }),
+    })
+
+    if (!res.ok || !res.body) throw new Error('Server error')
+
+    const reader = res.body.getReader()
+    const decoder = new TextDecoder()
+    let buffer = ''
+
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
+      buffer += decoder.decode(value, { stream: true })
+      const lines = buffer.split('\n')
+      buffer = lines.pop() ?? ''
+
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue
+        try {
+          const d = JSON.parse(line.slice(6))
+          if (d.token) {
+            if (!bubble) { thinking.remove(); bubble = addStreamingMsg() }
+            fullText += d.token
+            bubble.innerHTML = renderMarkdown(fullText)
+            scrollBottom()
+          }
+          if (d.error) {
+            thinking.remove()
+            addMsg('ai', d.error)
+          }
+        } catch {}
+      }
+    }
+
+    if (!bubble) { thinking.remove(); addMsg('ai', '(no response)') }
+
+  } catch {
+    thinking.remove()
+    addMsg('ai', 'Error: could not reach server')
+  } finally {
+    sendBtn.disabled = false
+    q.focus()
+  }
+}
+
+sendBtn.addEventListener('click', ask)
+q.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); ask() }
+})
+
+q.focus()
+
+// ── Voice (push-to-talk) ───────────────────────────────────────────────────
+let mediaRecorder = null
+let audioChunks = []
+let isRecording = false
+const micBtn = document.getElementById('micBtn')
+
+async function toggleVoice() {
+  if (isRecording) {
+    stopRecording()
+  } else {
+    await startRecording()
+  }
+}
+
+async function startRecording() {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+    audioChunks = []
+    mediaRecorder = new MediaRecorder(stream)
+    mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) audioChunks.push(e.data) }
+    mediaRecorder.onstop = async () => {
+      stream.getTracks().forEach(t => t.stop())
+      await transcribeAudio()
+    }
+    mediaRecorder.start()
+    isRecording = true
+    micBtn.classList.add('recording')
+    micBtn.title = 'Recording… click to stop'
+    stxt.textContent = 'recording…'
+  } catch (err) {
+    addMsg('ai', 'Microphone access denied — check browser permissions')
+  }
+}
+
+function stopRecording() {
+  if (mediaRecorder && isRecording) {
+    mediaRecorder.stop()
+    isRecording = false
+    micBtn.classList.remove('recording')
+    micBtn.title = 'Push to talk (⌘⇧V)'
+    stxt.textContent = 'transcribing…'
+  }
+}
+
+async function transcribeAudio() {
+  const blob = new Blob(audioChunks, { type: mediaRecorder.mimeType })
+  const reader = new FileReader()
+  reader.onload = async (e) => {
+    const base64 = e.target.result.split(',')[1]
+    try {
+      const res = await fetch('/api/voice', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ audio: base64, mimeType: mediaRecorder.mimeType }),
+      })
+      const data = await res.json()
+      if (data.transcript) {
+        q.value = data.transcript
+        q.style.height = 'auto'
+        q.style.height = Math.min(q.scrollHeight, 96) + 'px'
+        stxt.textContent = 'connected'
+        ask()
+      } else {
+        stxt.textContent = 'connected'
+        addMsg('ai', data.error || 'Could not transcribe audio')
+      }
+    } catch {
+      stxt.textContent = 'connected'
+      addMsg('ai', 'Error: could not reach server')
+    }
+  }
+  reader.readAsDataURL(blob)
+}
+
+// ── Tab switching ──────────────────────────────────────────────────────────
+function switchTab(tab) {
+  const isAsk = tab === 'ask'
+  document.getElementById('tab-ask').classList.toggle('active', isAsk)
+  document.getElementById('tab-bridge').classList.toggle('active', !isAsk)
+  document.getElementById('chat').style.display = isAsk ? '' : 'none'
+  document.getElementById('bridge-panel').classList.toggle('visible', !isAsk)
+  // hide/show input row
+  document.querySelector('.img-preview').style.display = isAsk ? '' : 'none'
+  document.querySelector('.input-row').style.display = isAsk ? '' : 'none'
+  if (!isAsk) document.getElementById('bridge-error').focus()
+  else q.focus()
+}
+
+// ── Bridge ─────────────────────────────────────────────────────────────────
+const bridgeAnswer = document.getElementById('bridge-answer')
+const bridgeBtn    = document.getElementById('bridge-btn')
+
+async function askBridge() {
+  const error = document.getElementById('bridge-error').value.trim()
+  const lang  = document.getElementById('bridge-lang').value
+  if (!error) return
+
+  bridgeBtn.disabled = true
+  bridgeAnswer.className = 'bridge-answer thinking'
+  bridgeAnswer.textContent = 'thinking…'
+
+  const image = attachedImage
+  clearImage()
+
+  try {
+    const res = await fetch('/api/bridge', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ error, lang, ...(image ? { imageBase64: image } : {}) }),
+    })
+
+    if (!res.ok || !res.body) throw new Error('Server error')
+
+    const reader = res.body.getReader()
+    const decoder = new TextDecoder()
+    let buffer = ''
+    let full = ''
+    bridgeAnswer.className = 'bridge-answer'
+    bridgeAnswer.textContent = ''
+
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
+      buffer += decoder.decode(value, { stream: true })
+      const lines = buffer.split('\n')
+      buffer = lines.pop() ?? ''
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue
+        try {
+          const d = JSON.parse(line.slice(6))
+          if (d.token) { full += d.token; bridgeAnswer.innerHTML = renderMarkdown(full); document.getElementById('bridge-scroll').scrollTop = 999999 }
+        } catch {}
+      }
+    }
+  } catch {
+    bridgeAnswer.className = 'bridge-answer'
+    bridgeAnswer.textContent = 'Error: could not reach server'
+  } finally {
+    bridgeBtn.disabled = false
+  }
+}
+
+document.getElementById('bridge-error').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); askBridge() }
+})
+</script>
+</body>
+</html>
