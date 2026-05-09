@@ -38,7 +38,7 @@ async function main() {
   const archivist = new Archivist(config);
   await archivist.init();
   const connector = new Connector(config, archivist);
-  const observer = new Observer(config.watchPaths);
+  const observer = new Observer(config);
 
   archivist.start();
   connector.start();

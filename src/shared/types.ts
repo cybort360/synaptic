@@ -80,6 +80,7 @@ export interface SynapticConfig {
   ollamaBaseUrl: string;
   ollamaModel: string;
   ollamaReasoningModel: string;
+  embeddingModel: string;
   reasoningModelApiKey: string;
   reasoningModelEndpoint: string;
   reasoningModel: string;
@@ -106,6 +107,7 @@ export const DEFAULT_CONFIG: SynapticConfig = {
   ollamaBaseUrl: "http://localhost:11434",
   ollamaModel: "llama3.2",
   ollamaReasoningModel: "llama3.1:8b",
+  embeddingModel: "nomic-embed-text",
   reasoningModelApiKey: "",
   reasoningModelEndpoint: "https://generativelanguage.googleapis.com/v1beta",
   reasoningModel: "gemini-2.0-flash",

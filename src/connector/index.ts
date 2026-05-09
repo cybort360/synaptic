@@ -78,7 +78,7 @@ export class Connector {
   async query(question: string): Promise<QueryResult> {
     const lang = this.langCtx();
     const currentContext = this.archivist.getActiveContext(2);
-    const retrievedMemories = this.archivist.semanticSearch(question, 15);
+    const retrievedMemories = await this.archivist.semanticSearch(question, 15);
     const prompt = buildConnectionPrompt(currentContext, retrievedMemories, question, lang);
     const insight = await this.reasoner.reason(prompt);
     return {
@@ -94,7 +94,7 @@ export class Connector {
   async *queryStream(question: string, imageBase64?: string): AsyncGenerator<string> {
     const lang = this.langCtx();
     const currentContext = this.archivist.getActiveContext(2);
-    const retrievedMemories = this.archivist.semanticSearch(question, 15);
+    const retrievedMemories = await this.archivist.semanticSearch(question, 15);
     const prompt = buildConnectionPrompt(currentContext, retrievedMemories, question, lang);
     yield* this.reasoner.reasonStream(prompt, imageBase64);
   }
@@ -102,7 +102,7 @@ export class Connector {
   async translate(question: string, fromLang?: string, toLang?: string): Promise<QueryResult> {
     const from = fromLang || this.config.fromLang || undefined;
     const to   = toLang   || this.config.toLang   || undefined;
-    const retrievedMemories = this.archivist.semanticSearch(question, 10);
+    const retrievedMemories = await this.archivist.semanticSearch(question, 10);
     const prompt = buildTranslatePrompt(question, from, to, retrievedMemories);
     const insight = await this.reasoner.reason(prompt);
     const langPart = to ? to.toUpperCase() : "TARGET";
@@ -192,7 +192,7 @@ export class Connector {
       .join(". ");
 
     const currentContext = this.archivist.getActiveContext(1);
-    const retrievedMemories = this.archivist.semanticSearch(stuckQuery, 10);
+    const retrievedMemories = await this.archivist.semanticSearch(stuckQuery, 10);
     const prompt = buildStuckAssistancePrompt(currentContext, retrievedMemories, context.signals);
     const insight = await this.reasoner.reason(prompt);
 

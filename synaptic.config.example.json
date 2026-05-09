@@ -18,6 +18,7 @@
   "ollamaBaseUrl": "http://localhost:11434",
   "ollamaModel": "llama3.2",
   "ollamaReasoningModel": "llama3.1:8b",
+  "embeddingModel": "nomic-embed-text",
   "reasoningModelApiKey": "",
   "reasoningModelEndpoint": "https://generativelanguage.googleapis.com/v1beta",
   "reasoningModel": "gemini-2.0-flash",

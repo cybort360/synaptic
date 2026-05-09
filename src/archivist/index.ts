@@ -1,20 +1,18 @@
 import { SynapticDB } from "./db.js";
 import { Compressor } from "./compressor.js";
 import { Embedder } from "./embeddings.js";
+import { OllamaClient } from "../shared/ollama-client.js";
 import { eventBus } from "../shared/event-bus.js";
 import type { RawEvent, CompressedEvent, SynapticConfig } from "../shared/types.js";
 
-/**
- * The Archivist module: receives raw events from the Observer,
- * compresses them via the local Gemma 4 E4B model,
- * generates embeddings, and stores everything in SQLite.
- */
-const CONCEPT_WINDOW = 10; // how many past events to consider "known" concepts
+const CONCEPT_WINDOW = 10;
 
 export class Archivist {
   private db: SynapticDB;
   private compressor: Compressor;
   private embedder: Embedder;
+  private ollama: OllamaClient;
+  private embeddingModel: string;
   private eventQueue: RawEvent[] = [];
   private processing = false;
   private batchInterval: NodeJS.Timeout | null = null;
@@ -24,6 +22,19 @@ export class Archivist {
     this.db = new SynapticDB(config.dbPath);
     this.compressor = new Compressor(config.ollamaBaseUrl, config.ollamaModel);
     this.embedder = new Embedder();
+    this.ollama = new OllamaClient(config.ollamaBaseUrl);
+    this.embeddingModel = config.embeddingModel;
+  }
+
+  private async embed(text: string): Promise<number[]> {
+    if (this.embeddingModel) {
+      try {
+        return await this.ollama.embed(this.embeddingModel, text);
+      } catch {
+        // model not pulled or unavailable — fall back to feature hashing
+      }
+    }
+    return this.embedder.embed(text);
   }
 
   async init() {
@@ -75,7 +86,7 @@ export class Archivist {
           compressed.error_verbatim || "",
         ].join(" ");
 
-        compressed.embedding = this.embedder.embed(textForEmbedding);
+        compressed.embedding = await this.embed(textForEmbedding);
 
         this.db.insertEvent(compressed);
         this.trackConcepts(compressed.concepts);
@@ -109,12 +120,12 @@ export class Archivist {
   /**
    * Retrieve events semantically similar to a query string.
    */
-  semanticSearch(query: string, topK = 10): CompressedEvent[] {
-    const queryEmbedding = this.embedder.embed(query);
+  async semanticSearch(query: string, topK = 10): Promise<CompressedEvent[]> {
+    const queryEmbedding = await this.embed(query);
     const allEvents = this.db.getAllEventsWithEmbeddings();
 
     const candidates = allEvents
-      .filter((e) => e.embedding !== null)
+      .filter((e) => e.embedding !== null && e.embedding.length === queryEmbedding.length)
       .map((e) => ({ id: e.id, embedding: e.embedding! }));
 
     const results = this.embedder.findSimilar(queryEmbedding, candidates, topK);

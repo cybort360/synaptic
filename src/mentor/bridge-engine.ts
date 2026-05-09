@@ -55,8 +55,8 @@ export class BridgeEngine {
 
     // Filter memories to source language files when extensions are known
     const sourceExts = new Set(extensionsForLang(sourceLang).map(e => e.slice(1)));
-    const sourceMemories = this.archivist
-      .semanticSearch(searchQuery, 10)
+    const sourceMemories = (await this.archivist
+      .semanticSearch(searchQuery, 10))
       .filter((e) => {
         if (!e.file || sourceExts.size === 0) return true;
         const ext = e.file.split(".").pop()?.toLowerCase() ?? "";
