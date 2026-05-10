@@ -62,6 +62,41 @@ function waitForServer(retries = 30) {
   })
 }
 
+// ── Event watchdog — auto-shows HUD without user having to trigger it ─────────
+
+function connectEventWatchdog() {
+  const WS = require('ws')
+
+  // Events that should surface the HUD proactively
+  const PUSH_EVENTS = new Set([
+    'stuck_detected',    // developer is spinning — surface help before they ask
+    'habit_mismatch',    // old-language habit detected — warn immediately
+    'socratic_question', // Socratic gate fired — HUD must be visible to answer
+  ])
+
+  function connect() {
+    const ws = new WS(`ws://localhost:${PORT}`)
+
+    ws.on('message', (raw) => {
+      try {
+        const msg = JSON.parse(raw)
+        if (!PUSH_EVENTS.has(msg.type)) return
+        if (!hudWindow || hudWindow.isDestroyed()) return
+        if (!hudWindow.isVisible()) {
+          hudWindow.show()
+          hudWindow.focus()
+          console.log(`[Watchdog] Showing HUD — triggered by: ${msg.type}`)
+        }
+      } catch {}
+    })
+
+    ws.on('close', () => setTimeout(connect, 3000))
+    ws.on('error', ()  => {}) // silence — server may not be ready yet
+  }
+
+  connect()
+}
+
 // ── HUD ───────────────────────────────────────────────────────────────────────
 
 function createHUD() {
@@ -78,7 +113,10 @@ function createHUD() {
   hudWindow.on('close', (e) => { if (!forceQuit) { e.preventDefault(); hudWindow.hide() } })
   hudWindow.on('destroyed', () => { hudWindow = null })
   waitForServer()
-    .then(() => { if (hudWindow && !hudWindow.isDestroyed()) hudWindow.loadURL(`http://localhost:${PORT}/hud`) })
+    .then(() => {
+      if (hudWindow && !hudWindow.isDestroyed()) hudWindow.loadURL(`http://localhost:${PORT}/hud`)
+      connectEventWatchdog()
+    })
     .catch(() => { if (hudWindow && !hudWindow.isDestroyed()) hudWindow.loadURL(`data:text/html,<body style="background:#0a0d11;color:#ff6b6b;font-family:monospace;padding:20px">Server failed to start.</body>`) })
 }
 

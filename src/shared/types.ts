@@ -132,7 +132,7 @@ export const DEFAULT_CONFIG: SynapticConfig = {
     medium: 30,
     high: 365,
   },
-  socraticMode: false,
+  socraticMode: true,
   socraticStrictness: "followup",
 };
 
