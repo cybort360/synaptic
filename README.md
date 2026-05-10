@@ -294,6 +294,25 @@ Gemma 4's multimodal capability is what makes the vision pipeline possible — w
 # "reasoningModelApiKey": "your-google-ai-studio-key" in synaptic.config.json
 ```
 
+### Why `gemma4:e4b` specifically
+
+The `e4b` model (4B effective parameters) was a deliberate choice, not a default.
+
+**Speed is the constraint.** Synaptic compresses every file save and terminal command into a structured memory — running a compression pass every few seconds in the background while you code. A larger model would create a backlog. With `gemma4:e4b`, compression completes before the next event arrives. The 3-second batch cycle stays clean.
+
+**Multimodal was the unlock.** When you hit a terminal error on macOS, Synaptic captures a screenshot and sends it to Gemma before compression. Gemma reads the actual stack trace off your screen — not the shell history, which often truncates. This is only possible with a vision-capable model. A text-only 4B model can't do it. A vision-capable model too large to run locally can't do it. `gemma4:e4b` is the intersection: fast, local, and genuinely multimodal.
+
+**What breaks with a different model:**
+
+| Alternative | What fails |
+|---|---|
+| A 27B local model | Compression batches pile up — 3-second cycle becomes 30+ seconds, memories fall behind real activity |
+| A non-multimodal 4B | Vision pipeline silently degrades — errors are compressed without reading the actual screen output |
+| A cloud-only model | The entire privacy guarantee breaks — your code, errors, and history leave your machine |
+| No local model at all | Socratic gate can't fire on every file save — latency makes it unusable as a real-time feature |
+
+The Socratic gate in particular depends on this: it fires within 1.5 seconds of a file save, generates a personalised question, and streams it word-by-word to the HUD. That loop only works because `gemma4:e4b` is fast enough to start generating before the developer has finished opening their editor.
+
 ---
 
 ## Platform support
