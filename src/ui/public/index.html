@@ -1345,7 +1345,13 @@ function handleMsg(msg) {
   else if (msg.type === 'stuck_detected') showStuck(msg.data);
   else if (msg.type === 'habit_mismatch') addHabitMismatch(msg.data);
   else if (msg.type === 'stats') updateStats(msg.data);
-  else if (msg.type === 'socratic_question') showSocraticBanner(msg.data);
+  else if (msg.type === 'socratic_question') {
+    // Guard: only show banner on first event per session — not on every streaming token
+    if (!_shownSocraticBanners.has(msg.data.sessionId)) {
+      _shownSocraticBanners.add(msg.data.sessionId);
+      showSocraticBanner(msg.data);
+    }
+  }
   else if (msg.type === 'socratic_result') handleSocraticResult(msg.data);
   else if (msg.type === 'config_changed') applyConfigUpdate(msg.data);
 }
@@ -1955,6 +1961,8 @@ function addHabitMismatch(m) {
 
   // Also add to right-rail memories
   const el = document.getElementById('memoriesEl');
+  // Clear the empty-state placeholder if no real memory cards exist yet
+  if (!el.querySelector('.memory')) el.innerHTML = '';
   const card = document.createElement('div');
   card.className = 'memory trap';
   card.innerHTML = `<div class="trap-flag">Past trap · ${esc(m.trapType.replace(/_/g,' '))}</div>
@@ -1962,7 +1970,11 @@ function addHabitMismatch(m) {
     <div class="title">${esc(m.oldLang)} → ${esc(m.newLang)}</div>
     <div class="snippet">${esc(m.warning)}</div>`;
   el.insertBefore(card, el.firstChild);
-  document.getElementById('memShown').textContent = parseInt(document.getElementById('memShown').textContent || '0') + 1;
+  const shown = parseInt(document.getElementById('memShown').textContent || '0') + 1;
+  document.getElementById('memShown').textContent = shown;
+  // Keep total in sync so counter reads N / N not N / 0
+  const total = Math.max(parseInt(document.getElementById('memTotal').textContent || '0'), shown);
+  document.getElementById('memTotal').textContent = total;
 }
 
 // ── Stuck ──
@@ -2014,6 +2026,8 @@ async function fireTestEvent() {
   }
 }
 
+const _shownSocraticBanners = new Set();
+
 function showSocraticBanner(data) {
   const banner = document.getElementById('socraticBanner');
   const fileEl = document.getElementById('socraticBannerFile');
@@ -2024,6 +2038,7 @@ function showSocraticBanner(data) {
 }
 
 function handleSocraticResult(data) {
+  _shownSocraticBanners.delete(data.sessionId);
   const banner = document.getElementById('socraticBanner');
   const fileEl = document.getElementById('socraticBannerFile');
   if (data.passed) {

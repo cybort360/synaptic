@@ -37,8 +37,8 @@ export class SocraticEngine {
     const sessionId = randomUUID();
     const history: SocraticTurn[] = [];
 
-    const recentContext = this.archivist.getActiveContext(24);
-    const fileMemories = await this.archivist.semanticSearch(gate.filePath, 8);
+    const recentContext = this.archivist.getActiveContext(4);
+    const fileMemories = await this.archivist.semanticSearch(gate.filePath, 4);
 
     const relevantConcepts = [
       ...new Set([
@@ -56,22 +56,7 @@ export class SocraticEngine {
       developerAnswer: null,
     });
 
-    let question: string;
-    try {
-      question = await this.reasoner.reason(prompt);
-      question = question.trim();
-    } catch {
-      console.warn("[Socratic] Failed to generate opening question, skipping session");
-      return;
-    }
-
-    const turn: SocraticTurn = {
-      role: "question",
-      content: question,
-      timestamp: new Date().toISOString(),
-    };
-    history.push(turn);
-
+    // Register session immediately so the HUD opens before generation finishes
     const session: SocraticSession = {
       id: sessionId,
       filePath: gate.filePath,
@@ -81,18 +66,39 @@ export class SocraticEngine {
       status: "open",
       relevantConcepts,
     };
-
     this.sessions.set(sessionId, session);
 
+    // Emit with empty question first — HUD opens instantly
     const questionEvent: SocraticQuestionEvent = {
       sessionId,
       filePath: gate.filePath,
-      question,
+      question: "",
       turnIndex: 0,
       isFollowUp: false,
       strictness: this.config.socraticStrictness,
     };
     eventBus.emitSocraticQuestion(questionEvent);
+
+    // Stream tokens — HUD updates word-by-word as they arrive
+    let question = "";
+    try {
+      for await (const token of this.reasoner.reasonStream(prompt)) {
+        question += token;
+        eventBus.emitSocraticQuestion({ ...questionEvent, question: question.trim() });
+      }
+      question = question.trim();
+    } catch {
+      console.warn("[Socratic] Failed to generate opening question, skipping session");
+      this.sessions.delete(sessionId);
+      return;
+    }
+
+    const turn: SocraticTurn = {
+      role: "question",
+      content: question,
+      timestamp: new Date().toISOString(),
+    };
+    history.push(turn);
 
     console.log(`[Socratic] Session ${sessionId} started for ${gate.filePath}`);
   }
@@ -110,8 +116,8 @@ export class SocraticEngine {
 
     const questionCount = session.history.filter((t) => t.role === "question").length;
 
-    const recentContext = this.archivist.getActiveContext(24);
-    const fileMemories = await this.archivist.semanticSearch(session.filePath, 8);
+    const recentContext = this.archivist.getActiveContext(4);
+    const fileMemories = await this.archivist.semanticSearch(session.filePath, 4);
 
     const evalPrompt = buildSocraticEvalPrompt({
       filePath: session.filePath,
@@ -159,7 +165,10 @@ export class SocraticEngine {
     session.history.push(evalTurn);
 
     if (passed || questionCount >= MAX_TURNS) {
-      this.closeSession(session, true, feedback);
+      const closeMsg = passed
+        ? feedback
+        : "Good effort — session complete. Keep that thought in mind as you code.";
+      this.closeSession(session, true, closeMsg);
     } else if (followUp) {
       const followUpTurn: SocraticTurn = {
         role: "question",
@@ -193,6 +202,7 @@ export class SocraticEngine {
       totalTurns: session.history.filter((t) => t.role === "question").length,
     };
     eventBus.emitSocraticResult(result);
+    this.sessions.delete(sessionId);
     console.log(`[Socratic] Session ${sessionId} skipped.`);
   }
 
@@ -209,6 +219,7 @@ export class SocraticEngine {
       totalTurns: session.history.filter((t) => t.role === "question").length,
     };
     eventBus.emitSocraticResult(result);
+    this.sessions.delete(session.id);
     console.log(`[Socratic] Session ${session.id} closed — passed=${passed}`);
   }
 }

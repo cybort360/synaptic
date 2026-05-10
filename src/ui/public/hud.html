@@ -479,7 +479,9 @@ const imgThumb   = document.getElementById('imgThumb')
 const imgRemove  = document.getElementById('imgRemove')
 
 let attachedImage = null  // base64 string (no data: prefix)
-let socraticSession = null // { sessionId, filePath, isFollowUp }
+let socraticSession = null      // { sessionId, filePath, isFollowUp }
+let _evalPulse = null           // interval that animates "Evaluating..." — must be cleared before showing verdict
+const _panelShown = new Set()  // tracks which sessionIds have already opened the panel
 
 // ── Auto-resize ────────────────────────────────────────────────────────────
 q.addEventListener('input', () => {
@@ -538,8 +540,21 @@ function handleWS(msg) {
       : (c.ollamaReasoningModel || c.ollamaModel || 'local');
   }
   if (msg.type === 'socratic_question') {
-    socraticSession = { sessionId: msg.data.sessionId, filePath: msg.data.filePath, isFollowUp: msg.data.isFollowUp, strictness: msg.data.strictness }
-    showSocraticPanel(msg.data)
+    if (!_panelShown.has(msg.data.sessionId)) {
+      _panelShown.add(msg.data.sessionId)
+      socraticSession = { sessionId: msg.data.sessionId, filePath: msg.data.filePath, isFollowUp: msg.data.isFollowUp, strictness: msg.data.strictness }
+      showSocraticPanel(msg.data)
+    } else {
+      // Streaming update — replace question text in-place, re-enable input on follow-up
+      document.getElementById('socratic-question').textContent = msg.data.question || '…'
+      if (msg.data.isFollowUp) {
+        document.getElementById('socratic-input').disabled = false
+        document.getElementById('socratic-input').value = ''
+        document.getElementById('socratic-submit').disabled = false
+        document.getElementById('socratic-feedback').textContent = ''
+        document.getElementById('socratic-input').focus()
+      }
+    }
   }
   if (msg.type === 'socratic_result') {
     if (msg.data.passed) {
@@ -900,7 +915,7 @@ function showSocraticPanel(data) {
 
   fileEl.textContent = data.filePath.split('/').pop()
   labelEl.textContent = data.isFollowUp ? 'Follow-up question:' : 'Before you code:'
-  questionEl.textContent = data.question
+  questionEl.textContent = data.question || '…'
 
   skipBtn.style.display = data.strictness === 'gate' ? 'none' : ''
 
@@ -911,32 +926,52 @@ function showSocraticPanel(data) {
 }
 
 function hideSocraticPanel(successMessage) {
+  if (_evalPulse) { clearInterval(_evalPulse); _evalPulse = null; }
   const panel = document.getElementById('socratic-panel')
   if (successMessage) {
-    document.getElementById('socratic-feedback').textContent = '✓ ' + successMessage
-    document.getElementById('socratic-feedback').style.color = '#4caf50'
-    setTimeout(() => { panel.style.display = 'none' }, 1800)
+    const fb = document.getElementById('socratic-feedback')
+    fb.textContent = '✓ ' + successMessage
+    fb.style.color = '#4caf50'
+    fb.style.fontSize = '12px'
+    // Re-enable input area so it doesn't look frozen during the read window
+    document.getElementById('socratic-input').disabled = false
+    document.getElementById('socratic-submit').disabled = false
     socraticSession = null
+    _panelShown.clear()
+    setTimeout(() => { panel.style.display = 'none' }, 5000)
   } else if (socraticSession?.strictness !== 'gate') {
     panel.style.display = 'none'
     socraticSession = null
+    _panelShown.clear()
   }
 }
 
 function showSocraticFeedback(feedback) {
+  if (_evalPulse) { clearInterval(_evalPulse); _evalPulse = null; }
   const el = document.getElementById('socratic-feedback')
   el.textContent = feedback
   el.style.color = '#f0c040'
+  // Re-enable input so user can answer the follow-up
+  document.getElementById('socratic-input').disabled = false
+  document.getElementById('socratic-submit').disabled = false
+  document.getElementById('socratic-input').focus()
 }
 
 async function submitSocraticAnswer() {
   if (!socraticSession) return
-  const answer = document.getElementById('socratic-input').value.trim()
+  const input = document.getElementById('socratic-input')
+  const answer = input.value.trim()
   if (!answer) return
 
+  input.value = ''
+  input.disabled = true
   document.getElementById('socratic-submit').disabled = true
-  document.getElementById('socratic-feedback').textContent = 'Evaluating...'
-  document.getElementById('socratic-feedback').style.color = '#888'
+
+  const fb = document.getElementById('socratic-feedback')
+  fb.style.color = '#888'
+  let dots = 0
+  if (_evalPulse) clearInterval(_evalPulse)
+  _evalPulse = setInterval(() => { dots = (dots + 1) % 4; fb.textContent = 'Evaluating' + '.'.repeat(dots) }, 400)
 
   try {
     await fetch('/api/socratic/respond', {
@@ -944,9 +979,11 @@ async function submitSocraticAnswer() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ sessionId: socraticSession.sessionId, answer }),
     })
+    // Result arrives via WebSocket — keep disabled until panel closes or follow-up arrives
   } catch (e) {
-    document.getElementById('socratic-feedback').textContent = 'Error — try again'
-  } finally {
+    if (_evalPulse) { clearInterval(_evalPulse); _evalPulse = null; }
+    fb.textContent = 'Error — try again'
+    input.disabled = false
     document.getElementById('socratic-submit').disabled = false
   }
 }
