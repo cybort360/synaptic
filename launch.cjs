@@ -27,7 +27,22 @@ function waitForServer() {
   });
 }
 
+const { execSync } = require("child_process");
+
+function killExisting() {
+  try {
+    if (process.platform === "win32") {
+      execSync("taskkill /F /IM electron.exe", { stdio: "ignore", shell: true });
+    } else {
+      execSync("pkill -f 'Electron' || true", { stdio: "ignore", shell: true });
+      execSync("pkill -f 'tsx.*src/index' || true", { stdio: "ignore", shell: true });
+    }
+  } catch {}
+  return new Promise((r) => setTimeout(r, 1200));
+}
+
 async function main() {
+  await killExisting();
   console.log("[launch] Starting Synaptic server...");
 
   const npx = process.platform === "win32" ? "npx.cmd" : "npx";

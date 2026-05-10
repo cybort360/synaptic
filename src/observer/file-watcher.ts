@@ -94,8 +94,8 @@ export class FileWatcher {
 
       eventBus.emitRawEvent(event);
 
-      // Socratic gate: debounce 2s before emitting for file_open
-      if (type === "file_open" && this.config?.socraticMode) {
+      // Socratic gate: fire on file_open (new file) or file_save (editing session)
+      if ((type === "file_open" || type === "file_save") && this.config?.socraticMode) {
         const fileLanguage = BridgeEngine.detectLang(filePath);
         if (fileLanguage !== null) {
           const socraticTimer = setTimeout(() => {
@@ -103,7 +103,7 @@ export class FileWatcher {
             eventBus.emitSocraticGate({
               filePath,
               fileLanguage,
-              triggerType: "file_open",
+              triggerType: type === "file_open" ? "file_open" : "file_save",
             });
           }, 2000);
           this.socraticDebounceTimers.set(filePath, socraticTimer);

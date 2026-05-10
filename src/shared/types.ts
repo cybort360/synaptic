@@ -155,7 +155,7 @@ export interface SocraticTurn {
 export interface SocraticGateEvent {
   filePath: string;
   fileLanguage: string | null;
-  triggerType: "file_open";
+  triggerType: "file_open" | "file_save";
 }
 
 export interface SocraticQuestionEvent {
