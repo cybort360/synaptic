@@ -1,23 +1,27 @@
 const DEFAULT_BASE_URL = "http://localhost:11434";
 
-interface OllamaGenerateRequest {
+interface OllamaChatMessage {
+  role: "user" | "assistant" | "system";
+  content: string;
+  images?: string[];
+}
+
+interface OllamaChatRequest {
   model: string;
-  prompt: string;
+  messages: OllamaChatMessage[];
   stream?: boolean;
   format?: "json";
-  images?: string[];
   options?: {
     temperature?: number;
     num_predict?: number;
-    top_p?: number;
     stop?: string[];
   };
 }
 
-interface OllamaGenerateResponse {
-  model: string;
-  response: string;
+interface OllamaChatResponse {
+  message?: { role: string; content: string };
   done: boolean;
+  error?: string;
 }
 
 interface OllamaTagsResponse {
@@ -36,7 +40,10 @@ export class OllamaClient {
     prompt: string,
     opts: { temperature?: number; numPredict?: number; stop?: string[]; forceJson?: boolean } = {}
   ): Promise<string> {
-    const body: OllamaGenerateRequest = {
+    // Uses /api/generate (not /api/chat) because format:"json" works correctly
+    // with the generate endpoint for structured compression output, whereas
+    // /api/chat with format:"json" causes gemma4 to return empty content.
+    const body = {
       model, prompt, stream: false,
       ...(opts.forceJson ? { format: "json" } : {}),
       options: {
@@ -50,11 +57,13 @@ export class OllamaClient {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
+      signal: AbortSignal.timeout(60_000),
     });
 
     if (!response.ok) throw new Error(`Ollama error (${response.status}): ${await response.text()}`);
-    const result = (await response.json()) as OllamaGenerateResponse;
-    return result.response;
+    const result = await response.json() as { response?: string; error?: string };
+    if (result.error) throw new Error(`Ollama: ${result.error}`);
+    return result.response ?? "";
   }
 
   async *generateStream(
@@ -62,19 +71,24 @@ export class OllamaClient {
     prompt: string,
     opts: { temperature?: number; numPredict?: number; images?: string[] } = {}
   ): AsyncGenerator<string> {
-    const body: OllamaGenerateRequest = {
-      model, prompt, stream: true,
-      ...(opts.images?.length ? { images: opts.images } : {}),
+    const msg: OllamaChatMessage = { role: "user", content: prompt };
+    if (opts.images?.length) msg.images = opts.images;
+
+    const body: OllamaChatRequest = {
+      model,
+      messages: [msg],
+      stream: true,
       options: {
         temperature: opts.temperature ?? 0.3,
         num_predict: opts.numPredict ?? 1024,
       },
     };
 
-    const response = await fetch(`${this.baseUrl}/api/generate`, {
+    const response = await fetch(`${this.baseUrl}/api/chat`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
+      signal: AbortSignal.timeout(120_000),
     });
 
     if (!response.ok) throw new Error(`Ollama error (${response.status})`);
@@ -92,10 +106,14 @@ export class OllamaClient {
       for (const line of lines) {
         if (!line.trim()) continue;
         try {
-          const data = JSON.parse(line) as OllamaGenerateResponse;
-          if (data.response) yield data.response;
+          const data = JSON.parse(line) as OllamaChatResponse;
+          if (data.error) throw new Error(`Ollama: ${data.error}`);
+          const token = data.message?.content;
+          if (token) yield token;
           if (data.done) return;
-        } catch {}
+        } catch (e) {
+          if ((e as Error).message?.startsWith("Ollama:")) throw e;
+        }
       }
     }
   }
@@ -106,21 +124,23 @@ export class OllamaClient {
     imageBase64: string,
     opts: { temperature?: number; numPredict?: number } = {}
   ): Promise<string> {
-    const body: OllamaGenerateRequest = {
-      model, prompt, stream: false,
-      images: [imageBase64],
+    const body: OllamaChatRequest = {
+      model,
+      messages: [{ role: "user", content: prompt, images: [imageBase64] }],
+      stream: false,
       options: { temperature: opts.temperature ?? 0.1, num_predict: opts.numPredict ?? 512 },
     };
 
-    const response = await fetch(`${this.baseUrl}/api/generate`, {
+    const response = await fetch(`${this.baseUrl}/api/chat`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
     });
 
     if (!response.ok) throw new Error(`Ollama vision error (${response.status}): ${await response.text()}`);
-    const result = (await response.json()) as OllamaGenerateResponse;
-    return result.response;
+    const result = (await response.json()) as OllamaChatResponse;
+    if (result.error) throw new Error(`Ollama: ${result.error}`);
+    return result.message?.content ?? "";
   }
 
   async embed(model: string, text: string): Promise<number[]> {

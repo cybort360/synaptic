@@ -41,7 +41,46 @@ ${memoriesBlock || "No relevant memories found."}
 DEVELOPER'S QUESTION:
 ${query}
 
-Respond with your insights. Be direct and specific.`;
+Answer the question directly and specifically. If the retrieved memories are not relevant to the question, ignore them — do not summarize unrelated context. Do not give unsolicited advice about patterns you observe in the activity. Stay focused on what was asked.`;
+}
+
+export function buildExplainPrompt(
+  query: string,
+  retrievedMemories: CompressedEvent[],
+  lang: LangCtx = null
+): string {
+  const langLine2 = lang?.from && lang?.to
+    ? `The developer is coming from ${lang.from} and learning ${lang.to}. Use ${lang.from} analogies where helpful.`
+    : "";
+
+  const memBlock = retrievedMemories
+    .slice(0, 5)
+    .map((e) => `- ${e.summary}${e.error_verbatim ? ` (error: ${e.error_verbatim})` : ""}`)
+    .join("\n");
+
+  return `Explain "${query}" clearly and concisely to a developer.
+${langLine2}
+
+Do NOT give project advice or code review. Do NOT summarize what the developer has been doing.
+Just explain what "${query}" IS and why it matters.
+
+${memBlock ? `For context, the developer has worked with:\n${memBlock}\n\nUse this to make the explanation concrete and relevant to their actual work.` : ""}
+
+Structure your answer using these exact headers:
+
+## WHAT IT IS
+[one clear sentence]
+
+## HOW IT WORKS
+[2-3 sentences on the mechanism]
+
+## WHY IT MATTERS
+[one sentence on the practical benefit]
+
+## EXAMPLE
+\`\`\`
+[a short concrete code example]
+\`\`\``;
 }
 
 export function buildStuckAssistancePrompt(
@@ -144,29 +183,130 @@ Reply with JSON only:
 If no mismatch found: { "found": false }`;
 }
 
+interface SocraticPromptInput {
+  filePath: string;
+  fileLanguage: string | null;
+  recentContext: CompressedEvent[];
+  fileMemories: CompressedEvent[];
+  conversationHistory: { role: string; content: string }[];
+  developerAnswer: string | null;
+}
+
+export function buildSocraticPrompt(input: SocraticPromptInput): string {
+  const { filePath, fileLanguage, recentContext, fileMemories, conversationHistory } = input;
+
+  const lang = fileLanguage || "code";
+
+  const recentBlock = recentContext
+    .slice(0, 10)
+    .map((e) => `- [${e.type}] ${e.summary} (concepts: ${e.concepts.join(", ")})`)
+    .join("\n");
+
+  const memoryBlock = fileMemories
+    .slice(0, 5)
+    .map((e) => `- ${e.summary}${e.error_verbatim ? ` | past error: ${e.error_verbatim}` : ""}${e.resolution ? ` | fix: ${e.resolution}` : ""}`)
+    .join("\n");
+
+  const historyBlock = conversationHistory.length > 0
+    ? conversationHistory.map((t) => `${t.role.toUpperCase()}: ${t.content}`).join("\n")
+    : "";
+
+  return `You are Synaptic's Socratic tutor. A developer just opened ${filePath} (${lang}).
+
+Your job: ask ONE targeted question that makes them articulate their intent before they write code. The question must be:
+- Specific to this file and language (not generic)
+- Grounded in what this developer actually knows from their history
+- Probing a real decision point — types, architecture, error handling, performance — not trivia
+- Short: one sentence, ending with a question mark
+- Not a yes/no question
+
+DEVELOPER'S RECENT ACTIVITY:
+${recentBlock || "No recent activity."}
+
+MEMORIES RELATED TO THIS FILE:
+${memoryBlock || "No prior history for this file."}
+
+${historyBlock ? `CONVERSATION SO FAR:\n${historyBlock}\n` : ""}Output ONLY the question. No preamble, no explanation, no quotes.`;
+}
+
+export function buildSocraticEvalPrompt(input: SocraticPromptInput): string {
+  const { filePath, fileLanguage, recentContext, fileMemories, conversationHistory, developerAnswer } = input;
+
+  const lang = fileLanguage || "code";
+
+  const recentBlock = recentContext
+    .slice(0, 8)
+    .map((e) => `- [${e.type}] ${e.summary} (concepts: ${e.concepts.join(", ")})`)
+    .join("\n");
+
+  const memoryBlock = fileMemories
+    .slice(0, 4)
+    .map((e) => `- ${e.summary}`)
+    .join("\n");
+
+  const historyBlock = conversationHistory
+    .map((t) => `${t.role.toUpperCase()}: ${t.content}`)
+    .join("\n");
+
+  return `You are Synaptic's Socratic evaluator. A developer is explaining their approach to ${filePath} (${lang}) before writing code.
+
+DEVELOPER'S RECENT HISTORY:
+${recentBlock || "No recent activity."}
+
+FILE MEMORIES:
+${memoryBlock || "No prior history for this file."}
+
+CONVERSATION:
+${historyBlock}
+
+LATEST DEVELOPER ANSWER:
+${developerAnswer}
+
+Evaluate the explanation. Is it clear enough to suggest they understand what they're about to do?
+
+Scoring guide:
+- PASS: They named the specific approach, described at least one design decision, and mentioned a potential failure mode or edge case.
+- FOLLOW-UP needed: They gave a vague answer ("I'll add some logic here"), skipped a key decision, or repeated the question back.
+- FOLLOW-UP needed: They don't mention error handling, types, or edge cases at all for a non-trivial change.
+
+Reply with JSON only:
+{
+  "passed": true or false,
+  "feedback": "one sentence — either confirming what was good, or specifically what was missing",
+  "followUp": "if passed=false, one specific follow-up question targeting the gap. If passed=true, omit this field."
+}`;
+}
+
 export function buildMentalMapPrompt(
   newConcept: string,
   knownConcepts: string[],
   lang: LangCtx = null
 ): string {
-  const langContext = lang?.from && lang?.to
-    ? `The developer is coming from ${lang.from} and learning ${lang.to}. Frame your mappings in terms of ${lang.from} concepts they already know.`
-    : "Frame mappings in terms of concepts the developer already knows.";
+  const langLine = lang?.from && lang?.to
+    ? `The developer knows ${lang.from} and is learning ${lang.to}. Use ${lang.from} analogies where possible.`
+    : "";
 
-  return `You are Synaptic, a developer's second brain. Map a new concept to things the developer already understands.
+  const conceptList = knownConcepts.slice(0, 20).map((c) => `- ${c}`).join("\n");
 
-${langContext}
+  return `You are explaining the concept "${newConcept}" to a developer. Use only their existing knowledge as anchors.
+${langLine}
 
-NEW CONCEPT:
-${newConcept}
+Their known concepts:
+${conceptList}
 
-CONCEPTS THE DEVELOPER KNOWS:
-${knownConcepts.slice(0, 30).join(", ")}
+Reply using these exact headers — no preamble, no advice, just the explanation:
 
-For each relevant mapping:
-- Name the known concept it maps to
-- Explain what's the same and what's different
-- Give a one-line code comparison if applicable
+## WHAT IT IS
+[one sentence defining "${newConcept}"]
 
-Only map to concepts you're confident about. Skip tenuous analogies. Be concise.`;
+## CLOSEST MATCH
+[name one concept from the list] — [one sentence on why they are similar]
+
+## KEY DIFFERENCE
+[one sentence on what makes "${newConcept}" distinct]
+
+## EXAMPLE
+\`\`\`
+[2-4 lines of code showing "${newConcept}" in action]
+\`\`\``;
 }

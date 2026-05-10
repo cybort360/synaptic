@@ -11,7 +11,7 @@ export class Observer {
   private windowMonitor: WindowMonitor | null;
 
   constructor(config: SynapticConfig) {
-    this.fileWatcher = new FileWatcher(config.watchPaths);
+    this.fileWatcher = new FileWatcher(config.watchPaths, 1000, config);
     this.terminalCapture = new TerminalCapture();
     this.stuckDetector = new StuckDetector();
     this.windowMonitor = (process.platform === "darwin" && config.watchers.windows)
@@ -29,6 +29,10 @@ export class Observer {
       console.log("[Observer] Window monitor active");
     }
     console.log("[Observer] Watchers active");
+  }
+
+  addWatchPaths(paths: string[]) {
+    this.fileWatcher.addPaths(paths);
   }
 
   stop() {

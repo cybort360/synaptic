@@ -79,6 +79,7 @@ export interface SynapticConfig {
   toLang: string;
   ollamaBaseUrl: string;
   ollamaModel: string;
+  visionModel: string;
   ollamaReasoningModel: string;
   embeddingModel: string;
   reasoningModelApiKey: string;
@@ -91,11 +92,23 @@ export interface SynapticConfig {
     medium: number;
     high: number;
   };
+  socraticMode: boolean;
+  socraticStrictness: "followup" | "gate";
 }
 
 export const DEFAULT_CONFIG: SynapticConfig = {
   watchPaths: [],
-  excludePatterns: ["**/node_modules/**", "**/.git/**", "**/*.env"],
+  excludePatterns: [
+    "**/node_modules/**",
+    "**/.git/**",
+    "**/*.env",
+    "**/dist/**",
+    "**/build/**",
+    "**/.next/**",
+    "**/coverage/**",
+    "**/*.lock",
+    "**/*.db",
+  ],
   watchers: {
     files: true,
     terminal: true,
@@ -105,8 +118,9 @@ export const DEFAULT_CONFIG: SynapticConfig = {
   fromLang: "",
   toLang: "",
   ollamaBaseUrl: "http://localhost:11434",
-  ollamaModel: "llama3.2",
-  ollamaReasoningModel: "llama3.1:8b",
+  ollamaModel: "gemma4:e4b",
+  visionModel: "gemma4:e4b",
+  ollamaReasoningModel: "gemma4:e4b",
   embeddingModel: "nomic-embed-text",
   reasoningModelApiKey: "",
   reasoningModelEndpoint: "https://generativelanguage.googleapis.com/v1beta",
@@ -118,4 +132,44 @@ export const DEFAULT_CONFIG: SynapticConfig = {
     medium: 30,
     high: 365,
   },
+  socraticMode: false,
+  socraticStrictness: "followup",
 };
+
+export interface SocraticSession {
+  id: string;
+  filePath: string;
+  fileLanguage: string | null;
+  openedAt: string;
+  history: SocraticTurn[];
+  status: "open" | "passed" | "skipped";
+  relevantConcepts: string[];
+}
+
+export interface SocraticTurn {
+  role: "question" | "answer" | "evaluation";
+  content: string;
+  timestamp: string;
+}
+
+export interface SocraticGateEvent {
+  filePath: string;
+  fileLanguage: string | null;
+  triggerType: "file_open";
+}
+
+export interface SocraticQuestionEvent {
+  sessionId: string;
+  filePath: string;
+  question: string;
+  turnIndex: number;
+  isFollowUp: boolean;
+  strictness: "followup" | "gate";
+}
+
+export interface SocraticResultEvent {
+  sessionId: string;
+  passed: boolean;
+  feedback: string;
+  totalTurns: number;
+}

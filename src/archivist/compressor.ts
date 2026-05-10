@@ -39,10 +39,14 @@ Output ONLY valid JSON:
 export class Compressor {
   private ollama: OllamaClient;
   private model: string;
+  private visionModel: string;
 
-  constructor(ollamaBaseUrl: string, model: string) {
+  constructor(ollamaBaseUrl: string, model: string, visionModel?: string) {
     this.ollama = new OllamaClient(ollamaBaseUrl);
     this.model = model;
+    // Gemma 4B is the dedicated vision model for reading terminal screenshots.
+    // Falls back to the compression model if visionModel is not set.
+    this.visionModel = visionModel ?? model;
   }
 
   async compress(event: RawEvent): Promise<CompressedEvent> {
@@ -84,7 +88,7 @@ export class Compressor {
     try {
       const hint = event.data.command ? `Shell history recorded this command: ${event.data.command}` : "";
       const raw = await this.ollama.generateWithVision(
-        this.model,
+        this.visionModel,
         `${VISION_ERROR_PROMPT}\n\n${hint}`.trim(),
         screenshotBase64,
         { temperature: 0.1, numPredict: 512 }
@@ -136,7 +140,7 @@ export class Compressor {
     return {
       summary: String(parsed.summary || "No summary generated"),
       concepts: Array.isArray(parsed.concepts) ? parsed.concepts.map(String) : [],
-      significance: Math.max(0, Math.min(1, Number(parsed.significance) || 0.5)),
+      significance: Math.max(0, Math.min(1, parsed.significance != null ? Number(parsed.significance) : 0.5)),
       error_verbatim: parsed.error_verbatim ? String(parsed.error_verbatim) : null,
       resolution: parsed.resolution ? String(parsed.resolution) : null,
     };
@@ -154,16 +158,35 @@ export class Compressor {
       idle_timeout: 0.1,
       terminal_output: 0.3,
     };
+
+    const filePath = event.data.filePath as string | undefined;
+    const fileName = filePath ? filePath.split("/").pop() || filePath : null;
+    const command = event.data.command as string | undefined;
+    const app = event.data.app as string | undefined;
+    const error = event.data.error as string | undefined;
+
+    const summaryMap: Record<string, string> = {
+      file_save:        fileName ? `Saved ${fileName}` : "Saved a file",
+      file_open:        fileName ? `Opened ${fileName}` : "Opened a file",
+      file_delete:      fileName ? `Deleted ${fileName}` : "Deleted a file",
+      terminal_command: command  ? `Ran: ${command.slice(0, 80)}` : "Ran a command",
+      terminal_error:   error    ? `Error: ${error.slice(0, 80)}` : "Terminal error",
+      terminal_output:  "Terminal output",
+      window_focus:     app      ? `Switched to ${app}` : "App switch",
+      context_switch:   "Context switch",
+      idle_timeout:     "Idle period",
+    };
+
     return {
       id: randomUUID(),
       time: event.timestamp,
       type: event.type,
       project: (event.data.project as string) || "unknown",
-      file: (event.data.filePath as string) || null,
-      summary: `${event.type}: ${event.data.filePath || event.data.command || event.data.app || "unknown"}`,
+      file: filePath || null,
+      summary: summaryMap[event.type] || event.type,
       concepts: [],
       significance: significanceMap[event.type] || 0.3,
-      error_verbatim: (event.data.error as string) || null,
+      error_verbatim: error || null,
       resolution: null,
       resolves: null,
       embedding: null,

@@ -1,6 +1,8 @@
 import { Reasoner } from "./reasoner.js";
+import { SocraticEngine } from "../mentor/socratic-engine.js";
 import {
   buildConnectionPrompt,
+  buildExplainPrompt,
   buildStuckAssistancePrompt,
   buildMentalMapPrompt,
   buildTranslatePrompt,
@@ -8,7 +10,7 @@ import {
 } from "./prompts.js";
 import { eventBus } from "../shared/event-bus.js";
 import type { Archivist } from "../archivist/index.js";
-import type { SynapticConfig, QueryResult, HabitMismatch } from "../shared/types.js";
+import type { SynapticConfig, CompressedEvent, QueryResult, HabitMismatch } from "../shared/types.js";
 
 // Language → file extensions. Add any language here — no code changes needed elsewhere.
 export const LANG_EXTENSIONS: Record<string, string[]> = {
@@ -43,11 +45,13 @@ export class Connector {
   private config: SynapticConfig;
   private habitCheckQueue: string[] = [];
   private habitCheckInterval: NodeJS.Timeout | null = null;
+  private socratic: SocraticEngine;
 
   constructor(config: SynapticConfig, archivist: Archivist) {
     this.reasoner = new Reasoner(config);
     this.archivist = archivist;
     this.config = config;
+    this.socratic = new SocraticEngine(archivist, this.reasoner, config);
   }
 
   start() {
@@ -72,31 +76,65 @@ export class Connector {
     // Run habit mismatch check every 15 seconds
     this.habitCheckInterval = setInterval(() => this.runHabitCheck(), 15_000);
 
-    console.log("[Connector] Ready for queries and stuck detection");
-  }
+    // Socratic gate — triggers on file_open for recognized code files
+    eventBus.onSocraticGate(async (gate) => {
+      if (!this.config.socraticMode) return;
+      console.log(`[Connector] Socratic gate triggered for ${gate.filePath}`);
+      try {
+        await this.socratic.startSession(gate);
+      } catch (error) {
+        console.error("[Connector] Socratic session start failed:", error);
+      }
+    });
 
-  async query(question: string): Promise<QueryResult> {
-    const lang = this.langCtx();
-    const currentContext = this.archivist.getActiveContext(2);
-    const retrievedMemories = await this.archivist.semanticSearch(question, 15);
-    const prompt = buildConnectionPrompt(currentContext, retrievedMemories, question, lang);
-    const insight = await this.reasoner.reason(prompt);
-    return {
-      query: question,
-      mode: "find_solution",
-      relevant_events: retrievedMemories,
-      connections: [],
-      insight,
-      grounded_in: retrievedMemories.length,
-    };
+    console.log("[Connector] Ready for queries and stuck detection");
   }
 
   async *queryStream(question: string, imageBase64?: string): AsyncGenerator<string> {
     const lang = this.langCtx();
-    const currentContext = this.archivist.getActiveContext(2);
+    const currentContext = this.archivist.getActiveContext(24);
     const retrievedMemories = await this.archivist.semanticSearch(question, 15);
+    try { this.recordConnections(currentContext, retrievedMemories); } catch (e) { console.error("[Connector] recordConnections failed:", e); }
     const prompt = buildConnectionPrompt(currentContext, retrievedMemories, question, lang);
     yield* this.reasoner.reasonStream(prompt, imageBase64);
+  }
+
+  private recordConnections(context: CompressedEvent[], memories: CompressedEvent[]): void {
+    const sources = context.slice(0, 3);
+    memories.slice(0, 5).forEach((memory, i) => {
+      const confidence = Math.max(0.5, 0.9 - i * 0.1);
+      for (const source of sources) {
+        this.archivist.recordConnection({
+          source_event_id: source.id,
+          target_event_id: memory.id,
+          relationship: "semantic_similarity",
+          confidence,
+        });
+      }
+    });
+  }
+
+  async *explainStream(question: string): AsyncGenerator<string> {
+    const lang = this.langCtx();
+    const retrievedMemories = await this.archivist.semanticSearch(question, 8);
+    const prompt = buildExplainPrompt(question, retrievedMemories, lang);
+    yield* this.reasoner.reasonStream(prompt);
+  }
+
+  async *translateStream(question: string, fromLang?: string, toLang?: string): AsyncGenerator<string> {
+    const from = fromLang || this.config.fromLang || undefined;
+    const to   = toLang   || this.config.toLang   || undefined;
+    const retrievedMemories = await this.archivist.semanticSearch(question, 10);
+    const prompt = buildTranslatePrompt(question, from, to, retrievedMemories);
+    yield* this.reasoner.reasonStream(prompt);
+  }
+
+  async *mapConceptStream(newConcept: string): AsyncGenerator<string> {
+    const lang = this.langCtx();
+    const recentEvents = this.archivist.getActiveContext(48);
+    const knownConcepts = [...new Set(recentEvents.flatMap((e) => e.concepts))];
+    const prompt = buildMentalMapPrompt(newConcept, knownConcepts, lang);
+    yield* this.reasoner.reasonStream(prompt);
   }
 
   async translate(question: string, fromLang?: string, toLang?: string): Promise<QueryResult> {
@@ -140,6 +178,8 @@ export class Connector {
   }
 
   getReasoner(): Reasoner { return this.reasoner; }
+
+  getSocraticEngine(): SocraticEngine { return this.socratic; }
 
   stop() {
     if (this.habitCheckInterval) {
@@ -191,7 +231,7 @@ export class Connector {
       .filter(Boolean)
       .join(". ");
 
-    const currentContext = this.archivist.getActiveContext(1);
+    const currentContext = this.archivist.getActiveContext(4);
     const retrievedMemories = await this.archivist.semanticSearch(stuckQuery, 10);
     const prompt = buildStuckAssistancePrompt(currentContext, retrievedMemories, context.signals);
     const insight = await this.reasoner.reason(prompt);

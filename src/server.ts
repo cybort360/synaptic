@@ -7,7 +7,8 @@ import path from "path";
 import type { Server } from "http";
 import type { Connector } from "./connector/index.js";
 import type { Archivist } from "./archivist/index.js";
-import type { SynapticConfig } from "./shared/types.js";
+import type { Observer } from "./observer/index.js";
+import type { SynapticConfig, SocraticQuestionEvent, SocraticResultEvent } from "./shared/types.js";
 import { eventBus } from "./shared/event-bus.js";
 import { BridgeEngine } from "./mentor/bridge-engine.js";
 
@@ -31,33 +32,34 @@ function findWhisperBin(): string {
   return "whisper"; // will surface a clear "not found" error
 }
 
-export function createServer(connector: Connector, archivist: Archivist, config: SynapticConfig): Server {
+export function createServer(connector: Connector, archivist: Archivist, config: SynapticConfig, observer: Observer): Server {
   const app = express();
   const bridge = new BridgeEngine(archivist, connector.getReasoner(), config);
   app.use(express.json({ limit: "50mb" }));
   app.use(express.static("src/ui/public"));
   app.get("/hud", (_req, res) => res.sendFile("hud.html", { root: "src/ui/public" }));
 
+  // Shared SSE setup — flushes headers immediately so the browser gets 200 OK
+  // before the first token. Without this, Express buffers headers until the
+  // first res.write(), causing a blank hang while waiting on Ollama.
+  function startSSE(res: import("express").Response) {
+    res.setHeader("Content-Type", "text/event-stream");
+    res.setHeader("Cache-Control", "no-cache");
+    res.setHeader("Connection", "keep-alive");
+    res.write(": connected\n\n"); // forces headers + TCP flush immediately
+    return (data: object) => res.write(`data: ${JSON.stringify(data)}\n\n`);
+  }
+
   // --- Query endpoints ---
 
   app.post("/api/query", async (req, res) => {
     const { question, imageBase64 } = req.body as { question?: string; imageBase64?: string };
     if (!question) { res.status(400).json({ error: "Missing 'question' field" }); return; }
-
-    res.setHeader("Content-Type", "text/event-stream");
-    res.setHeader("Cache-Control", "no-cache");
-    res.setHeader("Connection", "keep-alive");
-
-    const send = (data: object) => res.write(`data: ${JSON.stringify(data)}\n\n`);
-
+    const send = startSSE(res);
     try {
-      for await (const token of connector.queryStream(question, imageBase64)) {
-        send({ token });
-      }
+      for await (const token of connector.queryStream(question, imageBase64)) send({ token });
       send({ done: true });
-    } catch (err) {
-      send({ error: "Query failed" });
-    }
+    } catch { send({ error: "Query failed" }); }
     res.end();
   });
 
@@ -66,21 +68,13 @@ export function createServer(connector: Connector, archivist: Archivist, config:
       error?: string; lang?: string; concepts?: string[]; imageBase64?: string;
     };
     if (!error) { res.status(400).json({ error: "Missing 'error' field" }); return; }
-
-    res.setHeader("Content-Type", "text/event-stream");
-    res.setHeader("Cache-Control", "no-cache");
-    res.setHeader("Connection", "keep-alive");
-
-    const send = (data: object) => res.write(`data: ${JSON.stringify(data)}\n\n`);
+    const send = startSSE(res);
     const targetLang = lang || config.toLang || "the target language";
-
     try {
       const stream = await bridge.explain(error, targetLang, concepts ?? [], imageBase64);
       for await (const token of stream) send({ token });
       send({ done: true });
-    } catch (err) {
-      send({ error: "Bridge failed" });
-    }
+    } catch { send({ error: "Bridge failed" }); }
     res.end();
   });
 
@@ -122,18 +116,71 @@ export function createServer(connector: Connector, archivist: Archivist, config:
     }
   });
 
+  app.post("/api/explain", async (req, res) => {
+    const { question } = req.body as { question?: string };
+    if (!question) { res.status(400).json({ error: "Missing 'question'" }); return; }
+    const send = startSSE(res);
+    try {
+      for await (const token of connector.explainStream(question)) send({ token });
+      send({ done: true });
+    } catch { send({ error: "Explain failed" }); }
+    res.end();
+  });
+
   app.post("/api/translate", async (req, res) => {
     const { question, fromLang, toLang } = req.body as { question?: string; fromLang?: string; toLang?: string };
     if (!question) { res.status(400).json({ error: "Missing 'question'" }); return; }
-    try { res.json(await connector.translate(question, fromLang, toLang)); }
-    catch { res.status(500).json({ error: "Translation failed" }); }
+    const send = startSSE(res);
+    try {
+      for await (const token of connector.translateStream(question, fromLang, toLang)) send({ token });
+      send({ done: true });
+    } catch { send({ error: "Translation failed" }); }
+    res.end();
   });
 
   app.post("/api/map-concept", async (req, res) => {
     const { concept } = req.body as { concept?: string };
     if (!concept) { res.status(400).json({ error: "Missing 'concept'" }); return; }
-    try { res.json(await connector.mapConcept(concept)); }
-    catch { res.status(500).json({ error: "Concept mapping failed" }); }
+    const send = startSSE(res);
+    try {
+      for await (const token of connector.mapConceptStream(concept)) send({ token });
+      send({ done: true });
+    } catch { send({ error: "Concept mapping failed" }); }
+    res.end();
+  });
+
+  // --- Socratic endpoints ---
+
+  app.post("/api/socratic/respond", async (req, res) => {
+    const { sessionId, answer } = req.body as { sessionId?: string; answer?: string };
+    if (!sessionId || !answer) {
+      res.status(400).json({ error: "Missing sessionId or answer" });
+      return;
+    }
+    try {
+      await connector.getSocraticEngine().respondToSession(sessionId, answer);
+      res.json({ ok: true });
+    } catch (err) {
+      console.error("[Server] Socratic respond failed:", err);
+      res.status(500).json({ error: "Failed to process response" });
+    }
+  });
+
+  app.post("/api/socratic/skip", (req, res) => {
+    const { sessionId } = req.body as { sessionId?: string };
+    if (!sessionId) { res.status(400).json({ error: "Missing sessionId" }); return; }
+    if (config.socraticStrictness === "gate") {
+      res.status(403).json({ error: "Skip not allowed in gate mode" });
+      return;
+    }
+    connector.getSocraticEngine().skipSession(sessionId);
+    res.json({ ok: true });
+  });
+
+  app.get("/api/socratic/session/:id", (req, res) => {
+    const session = connector.getSocraticEngine().getSession(req.params.id);
+    if (!session) { res.status(404).json({ error: "Session not found" }); return; }
+    res.json(session);
   });
 
   // --- Event/data endpoints ---
@@ -141,6 +188,72 @@ export function createServer(connector: Connector, archivist: Archivist, config:
   app.get("/api/events/recent", (req, res) => {
     const hours = Number(req.query.hours) || 2;
     res.json(archivist.getActiveContext(hours));
+  });
+
+  app.get("/api/events/significant", (req, res) => {
+    const min = Number(req.query.min) || 0.7;
+    const limit = Number(req.query.limit) || 100;
+    res.json(archivist.getHighSignificanceEvents(min, limit));
+  });
+
+  app.get("/api/events/project/:name", (req, res) => {
+    const limit = Number(req.query.limit) || 50;
+    res.json(archivist.getEventsByProject(req.params.name, limit));
+  });
+
+  app.get("/api/events/concept/:concept", (req, res) => {
+    const limit = Number(req.query.limit) || 20;
+    res.json(archivist.searchByConcept(req.params.concept, limit));
+  });
+
+  app.get("/api/events/:id/connections", (req, res) => {
+    res.json(archivist.getConnectionsForEvent(req.params.id));
+  });
+
+  // --- Debug endpoints ---
+
+  app.get("/api/debug", async (req, res) => {
+    const ollama = new (await import("./shared/ollama-client.js")).OllamaClient(config.ollamaBaseUrl);
+    const ollamaRunning = await ollama.isRunning();
+    const pulledModels = ollamaRunning ? await ollama.listModels() : [];
+    const stats = archivist.getDB().getStats();
+    res.json({
+      ollamaRunning,
+      pulledModels,
+      neededModels: {
+        compression: config.ollamaModel,
+        vision: config.visionModel,
+        reasoning: config.ollamaReasoningModel,
+        embedding: config.embeddingModel,
+      },
+      missingModels: ollamaRunning ? [
+        config.ollamaModel,
+        config.ollamaReasoningModel,
+        config.embeddingModel,
+      ].filter(m => !pulledModels.some(p => p.startsWith(m.split(":")[0]))) : "ollama not reachable",
+      watchPaths: config.watchPaths,
+      eventQueueLength: archivist.getQueueLength(),
+      processingBatch: archivist.isProcessing(),
+      totalEventsInDB: stats.totalEvents,
+    });
+  });
+
+  app.post("/api/debug/test-event", (req, res) => {
+    const watchRoot = config.watchPaths[0] || process.cwd();
+    const projectName = watchRoot.split("/").pop() || "project";
+    eventBus.emitRawEvent({
+      timestamp: new Date().toISOString(),
+      type: "file_save",
+      source: "file_watcher",
+      data: {
+        filePath: `${watchRoot}/test-file.ts`,
+        fileName: "test-file.ts",
+        extension: ".ts",
+        project: projectName,
+        content: "// test event fired from dashboard",
+      },
+    });
+    res.json({ ok: true, message: "Test event queued — check activity tab in ~5 seconds" });
   });
 
   app.delete("/api/events", (req, res) => {
@@ -164,15 +277,18 @@ export function createServer(connector: Connector, archivist: Archivist, config:
   // --- Config endpoints ---
 
   app.get("/api/config", (req, res) => {
-    res.json(config);
+    const safe = { ...config, reasoningModelApiKey: config.reasoningModelApiKey ? "***" : "" };
+    res.json(safe);
   });
 
   app.post("/api/config", (req, res) => {
     const update = req.body as Partial<SynapticConfig>;
+    if (update.watchPaths) observer.addWatchPaths(update.watchPaths);
     Object.assign(config, update);
     if (update.watchers) Object.assign(config.watchers, update.watchers);
     try {
       writeFileSync("synaptic.config.json", JSON.stringify(config, null, 2));
+      broadcast("config_changed", config);
       res.json({ ok: true, config });
     } catch {
       res.status(500).json({ error: "Failed to save config" });
@@ -201,13 +317,13 @@ export function createServer(connector: Connector, archivist: Archivist, config:
 
   app.post("/api/pause", (req, res) => {
     paused = true;
-    broadcast("observer_status", { watchers: { files: "paused", terminal: "paused", windows: "paused", shellHistory: "paused" } });
+    eventBus.emitObserverStatus({ watchers: { files: "paused", terminal: "paused", windows: "paused", shellHistory: "paused" } });
     res.json({ ok: true, paused: true });
   });
 
   app.post("/api/resume", (req, res) => {
     paused = false;
-    broadcast("observer_status", { watchers: { files: "active", terminal: "active", windows: "active", shellHistory: "active" } });
+    eventBus.emitObserverStatus({ watchers: { files: "active", terminal: "active", windows: "active", shellHistory: "active" } });
     res.json({ ok: true, paused: false });
   });
 
@@ -253,6 +369,18 @@ export function createServer(connector: Connector, archivist: Archivist, config:
     habitMismatches++;
     broadcast("habit_mismatch", mismatch);
     broadcast("stats", { ...archivist.getDB().getStats(), habitMismatches, paused });
+  });
+
+  eventBus.onSocraticQuestion((event: SocraticQuestionEvent) => {
+    broadcast("socratic_question", event);
+  });
+
+  eventBus.onSocraticResult((event: SocraticResultEvent) => {
+    broadcast("socratic_result", event);
+  });
+
+  eventBus.onObserverStatus((status) => {
+    broadcast("observer_status", status);
   });
 
   return server;

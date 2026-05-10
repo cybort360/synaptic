@@ -142,11 +142,11 @@
   .empty {
     flex: 1; display: flex; flex-direction: column;
     align-items: center; justify-content: center;
-    gap: 10px; color: var(--ink-mute); text-align: center; padding: 20px;
+    gap: 6px; color: var(--ink-mute); text-align: center; padding: 12px;
     pointer-events: none;
   }
   .empty svg { opacity: 0.3; }
-  .empty p { font-size: 11px; line-height: 1.6; max-width: 220px; }
+  .empty p { font-size: 11px; line-height: 1.5; max-width: 220px; }
   .empty .hint {
     font-size: 9px; color: var(--ink-mute); letter-spacing: 0.12em;
     text-transform: uppercase; opacity: 0.6;
@@ -348,6 +348,42 @@
 </style>
 </head>
 <body>
+<div id="socratic-panel" style="display:none; position:fixed; bottom:0; left:0; right:0;
+  background:#12121e; border-top:2px solid #f0c040; padding:14px 16px; flex-direction:column;
+  gap:10px; z-index:1000; font-family:inherit;">
+
+  <div style="display:flex; justify-content:space-between; align-items:center;">
+    <span id="socratic-label" style="color:#f0c040; font-size:11px; font-weight:600;
+      text-transform:uppercase; letter-spacing:0.06em;">Before you code:</span>
+    <span id="socratic-file" style="color:#888; font-size:11px;"></span>
+  </div>
+
+  <div id="socratic-question" style="color:#e8e8e8; font-size:14px; line-height:1.5;
+    padding:10px 12px; background:#1a1a2e; border-radius:6px; border-left:3px solid #f0c040;">
+  </div>
+
+  <textarea id="socratic-input" rows="3" placeholder="Type your explanation..."
+    style="width:100%; background:#1a1a2e; color:#e8e8e8; border:1px solid #333;
+    border-radius:6px; padding:10px; font-size:13px; resize:none; font-family:inherit;
+    box-sizing:border-box;"
+    onkeydown="if(event.key==='Enter' && (event.metaKey||event.ctrlKey)) submitSocraticAnswer()">
+  </textarea>
+
+  <div style="display:flex; gap:8px; align-items:center;">
+    <button id="socratic-submit" onclick="submitSocraticAnswer()"
+      style="background:#f0c040; color:#0a0a14; border:none; padding:8px 18px;
+      border-radius:5px; font-weight:600; cursor:pointer; font-size:13px;">
+      Submit
+    </button>
+    <button id="socratic-skip" onclick="skipSocratic()"
+      style="background:transparent; color:#666; border:1px solid #333; padding:8px 14px;
+      border-radius:5px; cursor:pointer; font-size:13px;">
+      Skip
+    </button>
+    <span id="socratic-feedback" style="font-size:12px; color:#888; flex:1; text-align:right;"></span>
+  </div>
+</div>
+
 <div class="hud">
 
   <!-- title bar -->
@@ -443,6 +479,7 @@ const imgThumb   = document.getElementById('imgThumb')
 const imgRemove  = document.getElementById('imgRemove')
 
 let attachedImage = null  // base64 string (no data: prefix)
+let socraticSession = null // { sessionId, filePath, isFollowUp }
 
 // ── Auto-resize ────────────────────────────────────────────────────────────
 q.addEventListener('input', () => {
@@ -494,6 +531,23 @@ function handleWS(msg) {
   if (msg.type === 'stuck_detected')  appendAlert('stuck', msg.data.suggestion || 'You seem stuck — want a hint?')
   if (msg.type === 'habit_mismatch')  appendAlert('habit', msg.data.warning || 'Old habit detected')
   if (msg.type === 'stats' && msg.data?.ollamaModel) modelPill.textContent = msg.data.ollamaModel
+  if (msg.type === 'config_changed') {
+    const c = msg.data;
+    modelPill.textContent = c.reasoningModelApiKey
+      ? (c.reasoningModel || 'gemini-2.0-flash')
+      : (c.ollamaReasoningModel || c.ollamaModel || 'local');
+  }
+  if (msg.type === 'socratic_question') {
+    socraticSession = { sessionId: msg.data.sessionId, filePath: msg.data.filePath, isFollowUp: msg.data.isFollowUp, strictness: msg.data.strictness }
+    showSocraticPanel(msg.data)
+  }
+  if (msg.type === 'socratic_result') {
+    if (msg.data.passed) {
+      hideSocraticPanel(msg.data.feedback)
+    } else {
+      showSocraticFeedback(msg.data.feedback)
+    }
+  }
 }
 connect()
 fetch('/api/config').then(r => r.json()).then(c => {
@@ -835,6 +889,77 @@ async function askBridge() {
 document.getElementById('bridge-error').addEventListener('keydown', (e) => {
   if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); askBridge() }
 })
+
+// ── Socratic ───────────────────────────────────────────────────────────────
+function showSocraticPanel(data) {
+  const panel = document.getElementById('socratic-panel')
+  const questionEl = document.getElementById('socratic-question')
+  const fileEl = document.getElementById('socratic-file')
+  const labelEl = document.getElementById('socratic-label')
+  const skipBtn = document.getElementById('socratic-skip')
+
+  fileEl.textContent = data.filePath.split('/').pop()
+  labelEl.textContent = data.isFollowUp ? 'Follow-up question:' : 'Before you code:'
+  questionEl.textContent = data.question
+
+  skipBtn.style.display = data.strictness === 'gate' ? 'none' : ''
+
+  document.getElementById('socratic-input').value = ''
+  document.getElementById('socratic-feedback').textContent = ''
+  panel.style.display = 'flex'
+  document.getElementById('socratic-input').focus()
+}
+
+function hideSocraticPanel(successMessage) {
+  const panel = document.getElementById('socratic-panel')
+  if (successMessage) {
+    document.getElementById('socratic-feedback').textContent = '✓ ' + successMessage
+    document.getElementById('socratic-feedback').style.color = '#4caf50'
+    setTimeout(() => { panel.style.display = 'none' }, 1800)
+    socraticSession = null
+  } else if (socraticSession?.strictness !== 'gate') {
+    panel.style.display = 'none'
+    socraticSession = null
+  }
+}
+
+function showSocraticFeedback(feedback) {
+  const el = document.getElementById('socratic-feedback')
+  el.textContent = feedback
+  el.style.color = '#f0c040'
+}
+
+async function submitSocraticAnswer() {
+  if (!socraticSession) return
+  const answer = document.getElementById('socratic-input').value.trim()
+  if (!answer) return
+
+  document.getElementById('socratic-submit').disabled = true
+  document.getElementById('socratic-feedback').textContent = 'Evaluating...'
+  document.getElementById('socratic-feedback').style.color = '#888'
+
+  try {
+    await fetch('/api/socratic/respond', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sessionId: socraticSession.sessionId, answer }),
+    })
+  } catch (e) {
+    document.getElementById('socratic-feedback').textContent = 'Error — try again'
+  } finally {
+    document.getElementById('socratic-submit').disabled = false
+  }
+}
+
+async function skipSocratic() {
+  if (!socraticSession) return
+  await fetch('/api/socratic/skip', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ sessionId: socraticSession.sessionId }),
+  })
+  hideSocraticPanel(null)
+}
 </script>
 </body>
 </html>

@@ -54,6 +54,7 @@ export class WindowMonitor {
             previousApp: this.lastApp || null,
             previousTitle: this.lastTitle || null,
             category: this.categorizeApp(appName),
+            project: "window",
           },
         };
 

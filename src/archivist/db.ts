@@ -131,6 +131,11 @@ export class SynapticDB {
   }
 
   insertConnection(conn: Omit<Connection, "id" | "discovered_at">): void {
+    const existing = this.query(
+      "SELECT id FROM connections WHERE source_event_id = ? AND target_event_id = ?",
+      [conn.source_event_id, conn.target_event_id]
+    );
+    if (existing.length > 0) return;
     this.db!.run(
       `INSERT INTO connections (id, source_event_id, target_event_id, relationship, confidence)
        VALUES (?, ?, ?, ?, ?)`,
@@ -187,14 +192,24 @@ export class SynapticDB {
     ) as Connection[];
   }
 
-  getStats(): { totalEvents: number; totalConnections: number; projects: string[] } {
+  getStats(): { totalEvents: number; totalConnections: number; totalConcepts: number; projects: string[] } {
     const eventCount = this.query("SELECT COUNT(*) as count FROM events")[0];
     const connCount = this.query("SELECT COUNT(*) as count FROM connections")[0];
     const projects = this.query("SELECT DISTINCT project FROM events");
+    const conceptRows = this.query("SELECT GROUP_CONCAT(concepts) as all_concepts FROM events WHERE concepts != '[]'");
+    let totalConcepts = 0;
+    try {
+      const raw: string = conceptRows[0]?.all_concepts || "[]";
+      const all = raw.split(",").flatMap((chunk: string) => {
+        try { return JSON.parse(chunk.trim().startsWith("[") ? chunk : "[" + chunk + "]"); } catch { return []; }
+      });
+      totalConcepts = new Set(all.filter(Boolean)).size;
+    } catch {}
 
     return {
       totalEvents: eventCount?.count || 0,
       totalConnections: connCount?.count || 0,
+      totalConcepts,
       projects: projects.map((p: any) => p.project),
     };
   }

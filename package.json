@@ -27,6 +27,7 @@
     "url": "https://github.com/cybort360/synaptic/issues"
   },
   "scripts": {
+    "launch": "node launch.cjs",
     "dev": "tsx watch src/index.ts",
     "electron": "electron electron/main.cjs",
     "build": "tsc",

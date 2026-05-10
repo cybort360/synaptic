@@ -19,6 +19,7 @@ let hudWindow = null
 let serverProcess = null
 let tray = null
 let forceQuit = false
+const externalServer = process.env.SYNAPTIC_EXTERNAL_SERVER === '1'
 
 // ── Server ────────────────────────────────────────────────────────────────────
 
@@ -65,7 +66,7 @@ function waitForServer(retries = 30) {
 
 function createHUD() {
   const { workArea } = screen.getPrimaryDisplay()
-  const w = 380, h = 540
+  const w = 380, h = 400
   hudWindow = new BrowserWindow({
     width: w, height: h,
     x: workArea.x + workArea.width - w - 20,
@@ -83,10 +84,17 @@ function createHUD() {
 
 function toggleHUD() {
   try {
-    if (!hudWindow || hudWindow.isDestroyed()) { createHUD(); return }
+    if (!hudWindow || hudWindow.isDestroyed()) {
+      if (!hudWindow) createHUD();
+      return;
+    }
     if (hudWindow.isVisible()) hudWindow.hide()
     else { hudWindow.show(); hudWindow.focus() }
-  } catch { hudWindow = null; createHUD() }
+  } catch (e) {
+    console.error('[HUD] toggleHUD error:', e.message)
+    hudWindow = null
+    createHUD()
+  }
 }
 
 // ── Tray ──────────────────────────────────────────────────────────────────────
@@ -106,9 +114,21 @@ function buildTrayMenu() {
 
 // ── Lifecycle ─────────────────────────────────────────────────────────────────
 
+// Enforce single instance — if another Electron process is already running,
+// focus its HUD and quit this one instead of spawning a second window.
+const gotLock = app.requestSingleInstanceLock()
+if (!gotLock) {
+  app.quit()
+}
+
+app.on('second-instance', () => {
+  toggleHUD()
+})
+
 app.whenReady().then(() => {
+  if (!gotLock) return
   if (process.platform === 'darwin') app.dock.hide()
-  startServer()
+  if (!externalServer) startServer()  // skip when launch.cjs already manages the server
   createHUD()
   globalShortcut.register('CommandOrControl+Shift+S', toggleHUD)
 

@@ -3,7 +3,7 @@ import { Compressor } from "./compressor.js";
 import { Embedder } from "./embeddings.js";
 import { OllamaClient } from "../shared/ollama-client.js";
 import { eventBus } from "../shared/event-bus.js";
-import type { RawEvent, CompressedEvent, SynapticConfig } from "../shared/types.js";
+import type { RawEvent, CompressedEvent, Connection, SynapticConfig } from "../shared/types.js";
 
 const CONCEPT_WINDOW = 10;
 
@@ -20,7 +20,7 @@ export class Archivist {
 
   constructor(config: SynapticConfig) {
     this.db = new SynapticDB(config.dbPath);
-    this.compressor = new Compressor(config.ollamaBaseUrl, config.ollamaModel);
+    this.compressor = new Compressor(config.ollamaBaseUrl, config.ollamaModel, config.visionModel);
     this.embedder = new Embedder();
     this.ollama = new OllamaClient(config.ollamaBaseUrl);
     this.embeddingModel = config.embeddingModel;
@@ -101,11 +101,13 @@ export class Archivist {
   }
 
   private isConceptEvolution(compressed: CompressedEvent): boolean {
-    // Always persist errors and high-significance events
     if (compressed.significance >= 0.7) return true;
     if (compressed.error_verbatim) return true;
 
-    // Persist if any concept hasn't been seen in the recent window
+    // Empty concepts means Ollama didn't analyze it (fallback path) — use
+    // significance alone so meaningful file/shell events still get stored.
+    if (compressed.concepts.length === 0) return compressed.significance >= 0.3;
+
     const known = new Set(this.recentConceptHistory.flat());
     return compressed.concepts.some((c) => !known.has(c));
   }
@@ -139,6 +141,34 @@ export class Archivist {
    */
   getActiveContext(hours = 2): CompressedEvent[] {
     return this.db.getRecentEvents(hours);
+  }
+
+  getEventsByProject(project: string, limit = 50): CompressedEvent[] {
+    return this.db.getEventsByProject(project, limit);
+  }
+
+  getHighSignificanceEvents(minSignificance = 0.7, limit = 100): CompressedEvent[] {
+    return this.db.getHighSignificanceEvents(minSignificance, limit);
+  }
+
+  searchByConcept(concept: string, limit = 20): CompressedEvent[] {
+    return this.db.searchByConcept(concept, limit);
+  }
+
+  recordConnection(conn: Omit<Connection, "id" | "discovered_at">): void {
+    this.db.insertConnection(conn);
+  }
+
+  getConnectionsForEvent(eventId: string): Connection[] {
+    return this.db.getConnectionsForEvent(eventId);
+  }
+
+  getQueueLength(): number {
+    return this.eventQueue.length;
+  }
+
+  isProcessing(): boolean {
+    return this.processing;
   }
 
   getDB(): SynapticDB {

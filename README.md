@@ -58,6 +58,21 @@ Paste an error message from any language. Synaptic explains it using your own co
 ### Habit mismatch detection
 Runs continuously in the background. When Synaptic detects a pattern from your history appearing in a new-language file where it won't work, it surfaces a warning. Proactive — doesn't wait for you to ask.
 
+### Socratic gate
+When `socraticMode` is enabled, Synaptic intercepts file opens for recognized code files and surfaces a targeted question before you start typing. The question is grounded in your own coding history — Gemma 27B reads your recent 24 hours of activity and asks you to articulate the specific approach you're about to take.
+
+Two modes:
+- **followup** (default) — Shows the question in the HUD. You can answer or skip. Non-blocking.
+- **gate** — The HUD panel persists until your explanation satisfies Gemma. Blocking. Designed for structured learning or pair-review sessions.
+
+Enable in config:
+```json
+"socraticMode": true,
+"socraticStrictness": "followup"
+```
+
+Voice input works in the Socratic panel — press `Cmd+Shift+V` while the panel is focused.
+
 ### Stuck detection
 Triggers automatically when two or more of these signals appear in a five-minute window:
 - Three or more errors
@@ -93,11 +108,11 @@ cd synaptic
 npm install
 ```
 
-Pull the models Synaptic uses by default:
+Pull the three models Synaptic uses:
 
 ```bash
-ollama pull llama3.2        # compression model — fast, runs every few seconds
-ollama pull llama3.1:8b     # reasoning model — used for queries and stuck detection
+ollama pull gemma4:e4b         # compression, vision, and reasoning
+ollama pull nomic-embed-text   # embeddings — semantic search over your memories
 ```
 
 Copy the example config and edit it:
@@ -162,8 +177,10 @@ The Electron app automatically uses the compiled `dist/` if it exists, or falls 
   "fromLang": "",
   "toLang": "",
   "ollamaBaseUrl": "http://localhost:11434",
-  "ollamaModel": "llama3.2",
-  "ollamaReasoningModel": "llama3.1:8b",
+  "ollamaModel": "gemma4:e4b",
+  "visionModel": "gemma4:e4b",
+  "ollamaReasoningModel": "gemma4:e4b",
+  "embeddingModel": "nomic-embed-text",
   "reasoningModelApiKey": "",
   "reasoningModelEndpoint": "https://generativelanguage.googleapis.com/v1beta",
   "reasoningModel": "gemini-2.0-flash",
@@ -183,10 +200,12 @@ The Electron app automatically uses the compiled `dist/` if it exists, or falls 
 |---|---|
 | `watchPaths` | Directories to watch. Empty array falls back to the current working directory. |
 | `fromLang` / `toLang` | Optional. Set these to enable habit mismatch detection and the Mentor Bridge. Any language pair works — `"Python"` → `"Go"`, `"Java"` → `"Kotlin"`, etc. Leave empty to use Synaptic as a general memory tool. |
-| `ollamaModel` | Used for event compression. Should be a fast model. |
-| `ollamaReasoningModel` | Used for queries and stuck detection. Can be a larger, slower model. |
-| `reasoningModelApiKey` | Optional. API key for a cloud reasoning model (e.g. Google AI Studio). If set, cloud is used for reasoning; Ollama is still used for compression. |
-| `reasoningModel` | The cloud model to use when `reasoningModelApiKey` is set. |
+| `ollamaModel` | Fast model for event compression. Runs every few seconds. Default: `gemma4:4b`. |
+| `visionModel` | Vision-capable model for reading terminal screenshots. Default: `gemma4:4b`. |
+| `ollamaReasoningModel` | Reasoning model for queries, stuck detection, habit mismatch, Mentor Bridge, and the Socratic engine. Default: `gemma4:27b`. |
+| `embeddingModel` | Embedding model for semantic search. Default: `nomic-embed-text`. |
+| `reasoningModelApiKey` | Optional. Google AI Studio API key. When set, replaces `ollamaReasoningModel` with `gemini-2.0-flash` for the reasoning tier. The 4B compression and vision models always stay local. |
+| `reasoningModel` | Cloud model used when `reasoningModelApiKey` is set. Default: `gemini-2.0-flash`. |
 | `retentionDays` | Events are pruned by significance. Low-significance events kept 7 days, medium 30, high 365. |
 
 ### Environment variables
@@ -201,23 +220,27 @@ The Electron app automatically uses the compiled `dist/` if it exists, or falls 
 
 ## Choosing your models
 
-Any Ollama model works. Here are tested combinations:
+Synaptic uses three model tiers. Each is independent — you can swap any one without affecting the others.
 
-| Use case | Compression (`ollamaModel`) | Reasoning (`ollamaReasoningModel`) |
-|---|---|---|
-| Low-spec machine | `llama3.2:1b` | `llama3.2` |
-| Default (recommended) | `llama3.2` | `llama3.1:8b` |
-| High quality, slower | `llama3.2` | `llama3.1:70b` |
-| Vision support (image paste) | `llava` or `llama3.2-vision` | `llama3.1:8b` |
-| Code-focused | `qwen2.5-coder:3b` | `qwen2.5-coder:7b` |
+| Tier | Config field | Default | Role |
+|---|---|---|---|
+| Compression + Vision + Reasoning | `ollamaModel` / `visionModel` / `ollamaReasoningModel` | `gemma4:e4b` | One model for everything local — compression, vision, and reasoning. Fast enough for real-time use. |
+| Embeddings | `embeddingModel` | `nomic-embed-text` | Converts memories into vectors for semantic search. Better at embeddings than a generalist 4B model. |
 
-For cloud-assisted reasoning (faster, better quality, requires API key):
+**Cloud reasoning (optional):** If your machine struggles with 27B, set a Google AI Studio key and Synaptic routes the reasoning tier through Gemini 2.0 Flash instead. The 4B compression and vision models always stay local regardless.
 
 ```bash
-# Google AI Studio — free tier available
-export AI_API_KEY=your_key_here
-# Then set in config: "reasoningModel": "gemini-2.0-flash"
+export AI_API_KEY=your_google_ai_studio_key
+# or set "reasoningModelApiKey" in synaptic.config.json
 ```
+
+**Lower-spec alternatives:**
+
+| Machine | Compression | Reasoning |
+|---|---|---|
+| 8GB RAM | `gemma4:4b` | Use cloud (`reasoningModelApiKey`) |
+| 16GB RAM | `gemma4:4b` | `gemma4:27b` (default) |
+| 32GB+ RAM | `gemma4:4b` | `gemma4:27b` or larger |
 
 ---
 
@@ -286,6 +309,9 @@ Express HTTP + WebSocket. The dashboard and HUD load from `src/ui/public/`. Conf
 | `POST` | `/api/translate` | `{ question, fromLang?, toLang? }` | Translate a pattern between languages |
 | `POST` | `/api/map-concept` | `{ concept }` | Map a new concept to known ones |
 | `POST` | `/api/voice` | `{ audio (base64), mimeType }` | Transcribe audio via whisper |
+| `POST` | `/api/socratic/respond` | `{ sessionId, answer }` | Submit an explanation to an active Socratic session |
+| `POST` | `/api/socratic/skip` | `{ sessionId }` | Skip the current Socratic session |
+| `GET` | `/api/socratic/session/:id` | — | Get full session history including Q&A turns |
 
 ### Data endpoints
 
@@ -417,7 +443,7 @@ npm run electron  # Electron app (uses dist/ if built, tsx if not)
 
 - **Linux window monitoring** — `window-monitor.ts` uses AppleScript (macOS only). A `xdotool` or `wmctrl` implementation for Linux X11/Wayland would be a great addition.
 - **Windows window monitoring** — same gap, needs a PowerShell or Win32 API approach.
-- **Embeddings** — `embeddings.ts` uses feature hashing, which is fast but approximate. A proper local embedding model (e.g. via Ollama's embedding API) would improve semantic search quality significantly.
+- **Embeddings** — uses `nomic-embed-text` via Ollama by default. Falls back to feature hashing in `embeddings.ts` if the model is unavailable or not pulled.
 - **Tests** — there are none. The core pipeline (compress → embed → store → retrieve → reason) is the right place to start.
 - **Model benchmarks** — compression quality varies significantly by model. Documenting which models produce the best structured output would help new users choose.
 

@@ -493,6 +493,13 @@
   .wiz-skip:hover { border-color: var(--line-2); color: var(--ink-2); }
   .wiz-start { background: var(--amber); color: #1a1206; font-family: inherit; font-weight: 600; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; padding: 8px 24px; border: none; border-radius: 2px; cursor: pointer; }
   .wiz-start:hover { background: #ffc46a; }
+  .mode-btn {
+    flex: 1; background: var(--panel); border: 1px solid var(--line); color: var(--ink-dim);
+    font-family: inherit; font-size: 11px; padding: 8px 6px; border-radius: 4px;
+    cursor: pointer; text-align: center; transition: border-color .12s, color .12s;
+  }
+  .mode-btn:hover { border-color: var(--line-2); color: var(--ink); }
+  .mode-btn.active { border-color: var(--amber); color: var(--amber); background: rgba(255,179,71,0.07); }
 
   /* ── Settings ── */
   .settings-overlay {
@@ -505,9 +512,19 @@
   .settings-head h2 { font-size: 14px; font-weight: 600; color: var(--ink); margin: 0; }
   .settings-close { background: none; border: none; color: var(--ink-mute); font-size: 20px; cursor: pointer; line-height: 1; padding: 2px 6px; border-radius: 2px; }
   .settings-close:hover { background: var(--panel-2); color: var(--ink); }
-  .settings-section { padding: 16px 24px; border-bottom: 1px solid var(--line); }
+  .settings-section { border-bottom: 1px solid var(--line); }
   .settings-section:last-child { border-bottom: none; }
-  .settings-section-label { font-size: 10px; font-weight: 600; letter-spacing: 0.22em; text-transform: uppercase; color: var(--ink-mute); margin-bottom: 12px; }
+  .settings-section-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 13px 24px; cursor: pointer; user-select: none;
+    transition: background .12s;
+  }
+  .settings-section-header:hover { background: rgba(255,255,255,0.025); }
+  .settings-section-label { font-size: 10px; font-weight: 600; letter-spacing: 0.22em; text-transform: uppercase; color: var(--ink-mute); }
+  .settings-chevron { color: var(--ink-mute); font-size: 14px; transition: transform .2s; line-height:1; }
+  .settings-section-header.open .settings-chevron { transform: rotate(180deg); }
+  .settings-section-body { padding: 0 24px 16px; display: none; }
+  .settings-section-body.open { display: block; }
   .toggle-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; font-size: 12.5px; color: var(--ink-2); }
   .toggle { position: relative; width: 34px; height: 18px; flex-shrink: 0; }
   .toggle input { opacity: 0; width: 0; height: 0; }
@@ -611,9 +628,25 @@
     <div class="wizard-step">
       <div class="wizard-step-label">Step 3 — Model setup</div>
       <div class="wiz-status-row" id="ollamaStatusRow"><span>Checking Ollama...</span></div>
-      <div class="wiz-code" id="wizPullCmd">ollama pull llama3.2</div>
-      <div style="font-size:11px;color:var(--ink-mute);margin-bottom:10px;">Optional: Google AI Studio API key for enhanced reasoning</div>
-      <input class="wiz-input" id="apiKeyInput" type="password" placeholder="AI Studio API key (optional)" style="width:100%" />
+      <div class="wiz-code" id="wizPullCmd" style="white-space:pre;line-height:1.8"></div>
+
+      <div style="margin-top:14px;margin-bottom:4px">
+        <div style="font-size:10px;color:var(--ink-mute);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:8px">Reasoning model</div>
+        <div style="display:flex;gap:6px;margin-bottom:10px">
+          <button id="wiz-fast" class="mode-btn active" onclick="selectWizReasoning('fast')">
+            <div style="font-weight:600">Local</div>
+            <div style="font-size:9px;margin-top:2px;opacity:0.7">gemma4:e4b · fast</div>
+          </button>
+          <button id="wiz-cloud" class="mode-btn" onclick="selectWizReasoning('cloud')">
+            <div style="font-weight:600">Cloud</div>
+            <div style="font-size:9px;margin-top:2px;opacity:0.7">Gemini 2.0 Flash</div>
+          </button>
+        </div>
+        <div id="wizApiKeyRow" style="display:none">
+          <input class="wiz-input" id="apiKeyInput" type="password" placeholder="Google AI Studio API key" style="width:100%;margin-bottom:4px" />
+          <div style="font-size:10px;color:var(--ink-mute)">Free at aistudio.google.com</div>
+        </div>
+      </div>
     </div>
 
     <div class="wizard-step">
@@ -627,6 +660,31 @@
         <div>
           <div style="font-size:10px;color:var(--ink-mute);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:6px">Moving to</div>
           <input class="wiz-input" id="toLangInput" type="text" placeholder="e.g. Go" style="width:100%" />
+        </div>
+      </div>
+    </div>
+
+    <div class="wizard-step">
+      <div class="wizard-step-label">Step 5 — Socratic gate <span style="color:var(--ink-mute);font-size:9px;letter-spacing:0.1em">(optional)</span></div>
+      <div style="font-size:11px;color:var(--ink-mute);margin-bottom:14px;line-height:1.7">
+        When enabled, Synaptic intercepts each file open and asks you to articulate your intent before writing code.
+        The question is grounded in your own coding history — not generic advice.
+      </div>
+      <label class="wiz-check" style="margin-bottom:14px">
+        <input type="checkbox" id="wizSocraticEnabled" onchange="toggleWizSocratic(this.checked)">
+        <span>Enable Socratic gate</span>
+      </label>
+      <div id="wizSocraticOptions" style="display:none;margin-top:4px">
+        <div style="font-size:10px;color:var(--ink-mute);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:8px">Mode</div>
+        <div style="display:flex;gap:6px">
+          <button id="wiz-followup" class="mode-btn active" onclick="selectWizSocratic('followup')" style="text-align:left;padding:10px 12px">
+            <div style="font-weight:600">Follow-up</div>
+            <div style="font-size:9px;margin-top:3px;opacity:0.7;line-height:1.4">Shows the question. You can answer or skip. Non-blocking.</div>
+          </button>
+          <button id="wiz-gate" class="mode-btn" onclick="selectWizSocratic('gate')" style="text-align:left;padding:10px 12px">
+            <div style="font-weight:600">Gate</div>
+            <div style="font-size:9px;margin-top:3px;opacity:0.7;line-height:1.4">Persists until AI accepts your explanation. Structured learning mode.</div>
+          </button>
         </div>
       </div>
     </div>
@@ -651,19 +709,119 @@
       <button class="settings-close" onclick="closeSettings()">×</button>
     </div>
     <div class="settings-section">
-      <div class="settings-section-label">Observation</div>
-      <div class="toggle-row"><span>File changes</span><label class="toggle"><input type="checkbox" id="stFiles" checked onchange="saveWatcherToggle('files',this.checked)"><span class="toggle-slider"></span></label></div>
-      <div class="toggle-row"><span>Terminal</span><label class="toggle"><input type="checkbox" id="stTerminal" checked onchange="saveWatcherToggle('terminal',this.checked)"><span class="toggle-slider"></span></label></div>
-      <div class="toggle-row"><span>Window monitor</span><label class="toggle"><input type="checkbox" id="stWindows" checked onchange="saveWatcherToggle('windows',this.checked)"><span class="toggle-slider"></span></label></div>
-      <button class="pause-btn" id="pauseAllBtn" onclick="togglePause()">Pause All Observation</button>
+      <div class="settings-section-header" onclick="toggleSettingsSection(this)">
+        <span class="settings-section-label">Socratic Gate</span>
+        <span class="settings-chevron">▾</span>
+      </div>
+      <div class="settings-section-body">
+        <div style="font-size:11px;color:var(--ink-mute);margin-bottom:12px;line-height:1.7">
+          Intercepts file opens and asks you to explain your intent before writing code.
+          Questions are grounded in your own coding history.
+        </div>
+        <div class="toggle-row" style="margin-bottom:12px">
+          <span style="font-size:12.5px;color:var(--ink-2)">Enable Socratic gate</span>
+          <label class="toggle"><input type="checkbox" id="stSocraticEnabled" onchange="saveSocraticMode()"><span class="toggle-slider"></span></label>
+        </div>
+        <div id="stSocraticStrictnessRow" style="display:none">
+          <div style="font-size:10px;color:var(--ink-mute);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:8px">Mode</div>
+          <div style="display:flex;gap:6px">
+            <button id="st-followup" class="mode-btn" onclick="selectSocraticStrictness('followup')" style="text-align:left;padding:10px 12px">
+              <div style="font-weight:600">Follow-up</div>
+              <div style="font-size:9px;margin-top:3px;opacity:0.7;line-height:1.4">Non-blocking. You can skip.</div>
+            </button>
+            <button id="st-gate" class="mode-btn" onclick="selectSocraticStrictness('gate')" style="text-align:left;padding:10px 12px">
+              <div style="font-weight:600">Gate</div>
+              <div style="font-size:9px;margin-top:3px;opacity:0.7;line-height:1.4">Blocks until AI accepts your explanation.</div>
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
     <div class="settings-section">
-      <div class="settings-section-label">Data</div>
-      <div class="st-row"><span>Total events</span><strong id="stTotalEvents">—</strong></div>
-      <div class="st-row"><span>Ollama model</span><strong id="stModel">—</strong></div>
-      <div style="display:flex;gap:8px;margin-top:4px">
-        <button class="danger-btn" onclick="clearOldData()">Clear &gt; 7 days</button>
-        <button class="danger-btn" onclick="clearAllData()">Clear all</button>
+      <div class="settings-section-header open" onclick="toggleSettingsSection(this)">
+        <span class="settings-section-label">Observation</span>
+        <span class="settings-chevron">▾</span>
+      </div>
+      <div class="settings-section-body open">
+        <div class="toggle-row"><span>File changes</span><label class="toggle"><input type="checkbox" id="stFiles" checked onchange="saveWatcherToggle('files',this.checked)"><span class="toggle-slider"></span></label></div>
+        <div class="toggle-row"><span>Terminal</span><label class="toggle"><input type="checkbox" id="stTerminal" checked onchange="saveWatcherToggle('terminal',this.checked)"><span class="toggle-slider"></span></label></div>
+        <div class="toggle-row"><span>Window monitor</span><label class="toggle"><input type="checkbox" id="stWindows" checked onchange="saveWatcherToggle('windows',this.checked)"><span class="toggle-slider"></span></label></div>
+        <button class="pause-btn" id="pauseAllBtn" onclick="togglePause()">Pause All Observation</button>
+      </div>
+    </div>
+    <div class="settings-section">
+      <div class="settings-section-header" onclick="toggleSettingsSection(this)">
+        <span class="settings-section-label">Reasoning Model</span>
+        <span class="settings-chevron">▾</span>
+      </div>
+      <div class="settings-section-body">
+        <div style="font-size:11px;color:var(--ink-mute);margin-bottom:10px;line-height:1.6">Used for queries, stuck detection, habit mismatch, and the Socratic engine.</div>
+        <div style="display:flex;gap:6px;margin-bottom:10px">
+          <button id="st-fast" class="mode-btn" onclick="selectReasoningMode('fast')">
+            <div style="font-weight:600">Local</div>
+            <div style="font-size:9px;margin-top:2px;opacity:0.7">gemma4:e4b</div>
+          </button>
+          <button id="st-cloud" class="mode-btn" onclick="selectReasoningMode('cloud')">
+            <div style="font-weight:600">Cloud</div>
+            <div style="font-size:9px;margin-top:2px;opacity:0.7">Gemini Flash</div>
+          </button>
+        </div>
+        <div id="stApiKeyRow" style="display:none;flex-direction:column;gap:6px">
+          <input class="wiz-input" id="stApiKey" type="password" placeholder="Google AI Studio API key" style="width:100%" />
+          <div style="font-size:10px;color:var(--ink-mute)">Free at aistudio.google.com</div>
+        </div>
+        <button class="wiz-btn" id="stSaveReasoning" onclick="saveReasoningMode()" style="width:100%;justify-content:center;margin-top:4px">Save</button>
+      </div>
+    </div>
+    <div class="settings-section">
+      <div class="settings-section-header" onclick="toggleSettingsSection(this)">
+        <span class="settings-section-label">Language Pair</span>
+        <span class="settings-chevron">▾</span>
+      </div>
+      <div class="settings-section-body">
+        <div style="font-size:11px;color:var(--ink-mute);margin-bottom:10px;line-height:1.6">Used for habit trap detection and the Mentor Bridge. Change this when you start learning a new language.</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+          <div>
+            <div style="font-size:10px;color:var(--ink-mute);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:5px">Coming from</div>
+            <input class="wiz-input" id="stFromLang" type="text" placeholder="e.g. Python" style="width:100%" />
+          </div>
+          <div>
+            <div style="font-size:10px;color:var(--ink-mute);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:5px">Learning</div>
+            <input class="wiz-input" id="stToLang" type="text" placeholder="e.g. Go" style="width:100%" />
+          </div>
+        </div>
+        <button class="wiz-btn" onclick="saveLangPair()" style="width:100%;justify-content:center">Save Language Pair</button>
+      </div>
+    </div>
+    <div class="settings-section">
+      <div class="settings-section-header" onclick="toggleSettingsSection(this)">
+        <span class="settings-section-label">Watched Paths</span>
+        <span class="settings-chevron">▾</span>
+      </div>
+      <div class="settings-section-body">
+        <div class="wiz-paths" id="stWatchPaths"></div>
+        <div class="wiz-path-row">
+          <input class="wiz-input" id="stPathInput" type="text" placeholder="/path/to/project" style="flex:1"
+            onkeydown="if(event.key==='Enter') addSettingsWatchPath()" />
+          <button class="wiz-btn" onclick="browseSettingsDirectory()">Browse</button>
+          <button class="wiz-btn" onclick="addSettingsWatchPath()">Add</button>
+        </div>
+      </div>
+    </div>
+    <div class="settings-section">
+      <div class="settings-section-header" onclick="toggleSettingsSection(this)">
+        <span class="settings-section-label">Data</span>
+        <span class="settings-chevron">▾</span>
+      </div>
+      <div class="settings-section-body">
+        <div class="st-row"><span>Total events</span><strong id="stTotalEvents">—</strong></div>
+        <div class="st-row"><span>Compression + vision</span><strong id="stModel">—</strong></div>
+        <div class="st-row"><span>Reasoning</span><strong id="stReasoningModel">—</strong></div>
+        <div class="st-row"><span>Embeddings</span><strong id="stEmbeddingModel">—</strong></div>
+        <div style="display:flex;gap:8px;margin-top:4px">
+          <button class="danger-btn" onclick="clearOldData()">Clear &gt; 7 days</button>
+          <button class="danger-btn" onclick="clearAllData()">Clear all</button>
+        </div>
       </div>
     </div>
   </div>
@@ -707,6 +865,7 @@
           <button data-f="ERR">Errors</button>
           <button data-f="SHELL">Shell</button>
         </div>
+        <div class="filters" id="projectFilters" style="display:none; border-top: 1px solid var(--line); padding-top:6px;"></div>
         <div class="timeline" id="timeline"></div>
       </div>
     </div>
@@ -753,7 +912,7 @@
               <div class="bridge-input-label">Paste your error or describe what's confusing</div>
               <textarea class="bridge-textarea" id="bridgeTextarea" placeholder="Paste an error message or describe what's confusing…"></textarea>
               <div class="bridge-controls">
-                <input class="bridge-lang-select" id="bridgeLangSelect" type="text" placeholder="target language" style="width:110px" />
+                <span class="bridge-lang-select" id="bridgeLangSelect" style="display:inline-flex;align-items:center;color:var(--ink-2);font-style:italic;min-width:80px"></span>
                 <button class="bridge-submit" id="bridgeSubmit" onclick="submitBridge()">Explain →</button>
                 <span class="bridge-img-note">⌘V to attach screenshot</span>
               </div>
@@ -779,6 +938,14 @@
           <div class="stuck-signals" id="stuckSignals"></div>
         </div>
         <button class="stuck-help-btn" onclick="askForHelp()">Get Help</button>
+      </div>
+
+      <div class="stuck-banner" id="socraticBanner" style="display:none; border-color:rgba(240,192,64,0.4); background:rgba(240,192,64,0.05);">
+        <div style="flex:1">
+          <div class="stuck-title">⚡ Socratic session active</div>
+          <div class="stuck-signals" id="socraticBannerFile"></div>
+        </div>
+        <button class="stuck-help-btn" style="background:transparent;border:1px solid var(--amber);color:var(--amber);" onclick="document.getElementById('socraticBanner').style.display='none'">Dismiss</button>
       </div>
 
       <div class="trap-zone" id="trapZone"></div>
@@ -869,8 +1036,33 @@ if (wizardDone) { document.getElementById('wizardOverlay').classList.add('hidden
 else { checkOllama(); }
 
 // ── Wizard ──
+let wizReasoningMode = 'fast';
+let wizSocraticStrictness = 'followup';
+
+function toggleWizSocratic(enabled) {
+  document.getElementById('wizSocraticOptions').style.display = enabled ? 'block' : 'none';
+}
+
+function selectWizSocratic(mode) {
+  wizSocraticStrictness = mode;
+  ['followup', 'gate'].forEach(m => document.getElementById('wiz-' + m).classList.toggle('active', m === mode));
+}
+
+function selectWizReasoning(mode) {
+  wizReasoningMode = mode;
+  ['fast', 'cloud'].forEach(m => {
+    document.getElementById('wiz-' + m).classList.toggle('active', m === mode);
+  });
+  document.getElementById('wizApiKeyRow').style.display = mode === 'cloud' ? 'block' : 'none';
+}
+
 function checkOllama() {
   fetch('/api/config').then(r => r.json()).then(cfg => {
+    const compression = cfg.ollamaModel || 'gemma4:4b';
+    const reasoning   = cfg.ollamaReasoningModel || 'gemma4:27b';
+    const embedding   = cfg.embeddingModel || 'nomic-embed-text';
+    document.getElementById('wizPullCmd').textContent =
+      `ollama pull ${compression}   # compression + vision\nollama pull ${reasoning}  # reasoning\nollama pull ${embedding}  # embeddings`;
     return fetch((cfg.ollamaBaseUrl || 'http://localhost:11434') + '/api/tags').catch(() => null);
   }).then(r => {
     const el = document.getElementById('ollamaStatusRow');
@@ -906,15 +1098,20 @@ function renderWizPaths() {
 function removeWizPath(i) { wizardPaths.splice(i, 1); renderWizPaths(); }
 
 async function startFromWizard() {
-  const apiKey  = document.getElementById('apiKeyInput').value.trim();
   const fromLang = document.getElementById('fromLangInput').value.trim();
   const toLang   = document.getElementById('toLangInput').value.trim();
+  const reasoningUpdate = wizReasoningMode === 'cloud'
+    ? { reasoningModelApiKey: document.getElementById('apiKeyInput').value.trim() }
+    : { ollamaReasoningModel: 'gemma4:e4b', reasoningModelApiKey: '' };
+  const socraticEnabled = document.getElementById('wizSocraticEnabled').checked;
   await fetch('/api/config', {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       watchPaths: wizardPaths,
       watchers: { files: document.getElementById('wFiles').checked, terminal: document.getElementById('wTerminal').checked, windows: document.getElementById('wWindows').checked, shellHistory: document.getElementById('wShell').checked },
-      ...(apiKey   ? { reasoningModelApiKey: apiKey } : {}),
+      ...reasoningUpdate,
+      socraticMode: socraticEnabled,
+      socraticStrictness: wizSocraticStrictness,
       ...(fromLang ? { fromLang } : {}),
       ...(toLang   ? { toLang }   : {}),
     }),
@@ -926,19 +1123,148 @@ function skipWizard() { finishWizard(); }
 function finishWizard() { localStorage.setItem('syn_wizard', '1'); document.getElementById('wizardOverlay').classList.add('hidden'); initApp(); }
 
 // ── Settings ──
-function openSettings() {
-  fetch('/api/stats').then(r => r.json()).then(s => { document.getElementById('stTotalEvents').textContent = s.totalEvents ?? '—'; }).catch(() => {});
-  fetch('/api/config').then(r => r.json()).then(c => {
-    document.getElementById('stModel').textContent = c.ollamaModel || '—';
-    if (c.ollamaModel) document.getElementById('wizPullCmd').textContent = `ollama pull ${c.ollamaModel}`;
-    document.getElementById('stFiles').checked = c.watchers?.files ?? true;
-    document.getElementById('stTerminal').checked = c.watchers?.terminal ?? true;
-    document.getElementById('stWindows').checked = c.watchers?.windows ?? true;
-  }).catch(() => {});
+async function openSettings() {
+  const [s, c] = await Promise.all([
+    fetch('/api/stats').then(r => r.json()).catch(() => ({})),
+    fetch('/api/config').then(r => r.json()).catch(() => ({})),
+  ]);
+  document.getElementById('stTotalEvents').textContent = s.totalEvents ?? '—';
+  document.getElementById('stModel').textContent = c.ollamaModel || '—';
+  document.getElementById('stReasoningModel').textContent = c.reasoningModelApiKey ? `${c.reasoningModel || 'gemini-2.0-flash'} (cloud)` : (c.ollamaReasoningModel || '—');
+  document.getElementById('stEmbeddingModel').textContent = c.embeddingModel || '—';
+  document.getElementById('stFiles').checked = c.watchers?.files ?? true;
+  document.getElementById('stTerminal').checked = c.watchers?.terminal ?? true;
+  document.getElementById('stWindows').checked = c.watchers?.windows ?? true;
+  document.getElementById('stFromLang').value = c.fromLang || '';
+  document.getElementById('stToLang').value = c.toLang || '';
+  settingsWatchPaths = Array.isArray(c.watchPaths) ? [...c.watchPaths] : [];
+  renderSettingsWatchPaths();
+  selectReasoningMode(detectReasoningMode(c));
+  const keyInput = document.getElementById('stApiKey');
+  if (c.reasoningModelApiKey === '***') {
+    keyInput.value = '';
+    keyInput.placeholder = 'API key set — paste new key to replace';
+  } else {
+    keyInput.value = '';
+    keyInput.placeholder = 'Google AI Studio API key';
+  }
+  const socraticOn = !!c.socraticMode;
+  document.getElementById('stSocraticEnabled').checked = socraticOn;
+  document.getElementById('stSocraticStrictnessRow').style.display = socraticOn ? 'block' : 'none';
+  ['followup', 'gate'].forEach(m => document.getElementById('st-' + m).classList.toggle('active', m === (c.socraticStrictness || 'followup')));
   document.getElementById('settingsOverlay').classList.remove('hidden');
 }
 function closeSettings() { document.getElementById('settingsOverlay').classList.add('hidden'); }
+
+function selectSocraticStrictness(mode) {
+  ['followup', 'gate'].forEach(m => document.getElementById('st-' + m).classList.toggle('active', m === mode));
+  fetch('/api/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ socraticStrictness: mode }) });
+}
+
+function saveSocraticMode() {
+  const enabled = document.getElementById('stSocraticEnabled').checked;
+  document.getElementById('stSocraticStrictnessRow').style.display = enabled ? 'block' : 'none';
+  fetch('/api/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ socraticMode: enabled }) });
+}
+
+function toggleSettingsSection(header) {
+  const body = header.nextElementSibling;
+  const open = body.classList.toggle('open');
+  header.classList.toggle('open', open);
+}
+
+let currentReasoningMode = 'fast';
+
+function detectReasoningMode(cfg) {
+  return cfg.reasoningModelApiKey ? 'cloud' : 'fast';
+}
+
+function selectReasoningMode(mode) {
+  currentReasoningMode = mode;
+  ['fast', 'cloud'].forEach(m => {
+    document.getElementById('st-' + m).classList.toggle('active', m === mode);
+  });
+  document.getElementById('stApiKeyRow').style.display = mode === 'cloud' ? 'flex' : 'none';
+}
+
+async function saveReasoningMode() {
+  const btn = document.getElementById('stSaveReasoning');
+  btn.disabled = true;
+  btn.textContent = 'Saving…';
+  const keyVal = document.getElementById('stApiKey').value.trim();
+  const update = currentReasoningMode === 'cloud'
+    ? (keyVal ? { reasoningModelApiKey: keyVal } : {}) // blank = keep existing key
+    : { ollamaReasoningModel: 'gemma4:e4b', reasoningModelApiKey: '' };
+  try {
+    const r = await fetch('/api/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(update) });
+    if (!r.ok) throw new Error('Server error');
+    btn.textContent = 'Saved ✓';
+    document.getElementById('stReasoningModel').textContent =
+      currentReasoningMode === 'cloud' ? 'gemini-2.0-flash (cloud)' : 'gemma4:e4b';
+  } catch {
+    btn.textContent = 'Error — retry';
+  } finally {
+    btn.disabled = false;
+    setTimeout(() => { btn.textContent = 'Save'; }, 2000);
+  }
+}
 function saveWatcherToggle(k, v) { fetch('/api/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ watchers: { [k]: v } }) }); }
+
+let settingsWatchPaths = [];
+
+function renderSettingsWatchPaths() {
+  document.getElementById('stWatchPaths').innerHTML = settingsWatchPaths.length
+    ? settingsWatchPaths.map((p, i) => `<div class="wiz-path-item"><span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p}</span><button class="wiz-path-remove" onclick="removeSettingsWatchPath(${i})">×</button></div>`).join('')
+    : '<div style="font-size:11px;color:var(--ink-mute);margin-bottom:6px">No paths configured</div>';
+}
+
+function addSettingsWatchPath() {
+  const input = document.getElementById('stPathInput');
+  const val = input.value.trim();
+  if (!val || settingsWatchPaths.includes(val)) return;
+  settingsWatchPaths.push(val);
+  input.value = '';
+  renderSettingsWatchPaths();
+  saveSettingsWatchPaths();
+}
+
+function removeSettingsWatchPath(i) {
+  settingsWatchPaths.splice(i, 1);
+  renderSettingsWatchPaths();
+  saveSettingsWatchPaths();
+}
+
+function saveSettingsWatchPaths() {
+  fetch('/api/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ watchPaths: settingsWatchPaths }) });
+}
+
+async function saveLangPair() {
+  const fromLang = document.getElementById('stFromLang').value.trim();
+  const toLang   = document.getElementById('stToLang').value.trim();
+  const btn = document.querySelector('[onclick="saveLangPair()"]');
+  if (btn) { btn.disabled = true; btn.textContent = 'Saving…'; }
+  try {
+    await fetch('/api/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ fromLang, toLang }) });
+    langPair.from = fromLang;
+    langPair.to   = toLang;
+    updateLangPairUI();
+    initBridge();
+    if (btn) btn.textContent = 'Saved ✓';
+  } catch {
+    if (btn) btn.textContent = 'Error — retry';
+  } finally {
+    if (btn) { btn.disabled = false; setTimeout(() => { btn.textContent = 'Save Language Pair'; }, 2000); }
+  }
+}
+
+async function browseSettingsDirectory() {
+  try {
+    const r = await fetch('/api/browse-directory', { method: 'POST' });
+    if (!r.ok) return;
+    const { path } = await r.json();
+    if (path) document.getElementById('stPathInput').value = path.replace(/\/$/, '');
+  } catch {}
+}
 function togglePause() {
   fetch(isPaused ? '/api/resume' : '/api/pause', { method: 'POST' }).then(() => { isPaused = !isPaused; updatePauseUI(); });
 }
@@ -955,25 +1281,56 @@ async function clearAllData() { if (!confirm('Clear ALL data?')) return; await f
 // ── Init ──
 function initApp() { connectWS(); loadEvents(); loadStats(); loadLangPair(); setupKeys(); }
 
+function applyConfigUpdate(c) {
+  window._reasoningModel = c.reasoningModelApiKey ? (c.reasoningModel || 'gemini') : (c.ollamaReasoningModel || '');
+  // Data section in settings (if open)
+  const stModel = document.getElementById('stModel');
+  const stReason = document.getElementById('stReasoningModel');
+  const stEmbed = document.getElementById('stEmbeddingModel');
+  if (stModel) stModel.textContent = c.ollamaModel || '—';
+  if (stReason) stReason.textContent = c.reasoningModelApiKey
+    ? `${c.reasoningModel || 'gemini-2.0-flash'} (cloud)` : (c.ollamaReasoningModel || '—');
+  if (stEmbed) stEmbed.textContent = c.embeddingModel || '—';
+  selectReasoningMode(detectReasoningMode(c));
+  const socEl = document.getElementById('stSocraticEnabled');
+  if (socEl) {
+    socEl.checked = !!c.socraticMode;
+    document.getElementById('stSocraticStrictnessRow').style.display = c.socraticMode ? 'block' : 'none';
+    ['followup', 'gate'].forEach(m => { const b = document.getElementById('st-' + m); if (b) b.classList.toggle('active', m === (c.socraticStrictness || 'followup')); });
+  }
+  // Language pair
+  langPair.from = c.fromLang || '';
+  langPair.to   = c.toLang   || '';
+  updateLangPairUI();
+  initBridge();
+}
+
 function loadLangPair() {
   fetch('/api/config').then(r => r.json()).then(cfg => {
     langPair.from = cfg.fromLang || '';
     langPair.to   = cfg.toLang   || '';
     updateLangPairUI();
+    window._reasoningModel = cfg.reasoningModelApiKey ? (cfg.reasoningModel || 'gemini') : (cfg.ollamaReasoningModel || '');
   }).catch(() => {});
 }
 
 function updateLangPairUI() {
   const btn = document.querySelector('#askModes button[data-mode="translate"]');
   if (!btn) return;
+  const toLang = langPair.to || 'your target language';
   if (langPair.from && langPair.to) {
     btn.textContent = `Translate · ${langPair.from} → ${langPair.to}`;
-    if (activeMode === 'translate') {
-      document.getElementById('askInput').placeholder = `How do I handle errors in ${langPair.to}?`;
-    }
   } else {
     btn.textContent = 'Translate';
   }
+  // Always sync the placeholder to the current active mode with updated lang pair
+  const ph = {
+    translate:     `How do I run two async tasks in parallel in ${toLang}?`,
+    explain:       `What is the ownership model in ${toLang}?`,
+    map_concept:   'What is tokio::select!?',
+    find_solution: 'Have I solved a similar error before?',
+  };
+  document.getElementById('askInput').placeholder = ph[activeMode] || '';
 }
 
 function connectWS() {
@@ -983,11 +1340,14 @@ function connectWS() {
 }
 
 function handleMsg(msg) {
-  if (msg.type === 'new_event') { allEvents.unshift(msg.data); if (allEvents.length > 200) allEvents.pop(); renderTimeline(); updateCount(); }
+  if (msg.type === 'new_event') { allEvents.unshift(msg.data); if (allEvents.length > 200) allEvents.pop(); renderTimeline(); updateCount(); renderProjectFilters(); }
   else if (msg.type === 'query_result') renderResult(msg.data);
   else if (msg.type === 'stuck_detected') showStuck(msg.data);
   else if (msg.type === 'habit_mismatch') addHabitMismatch(msg.data);
   else if (msg.type === 'stats') updateStats(msg.data);
+  else if (msg.type === 'socratic_question') showSocraticBanner(msg.data);
+  else if (msg.type === 'socratic_result') handleSocraticResult(msg.data);
+  else if (msg.type === 'config_changed') applyConfigUpdate(msg.data);
 }
 
 function switchView(name) {
@@ -1008,29 +1368,25 @@ function switchView(name) {
 let bridgeAttachedImage = null;
 
 function initBridge() {
-  const config = window._synapticConfig || {};
-  const from = config.fromLang || '';
-  const to   = config.toLang   || '';
-  const langInput = document.getElementById('bridgeLangSelect');
-  if (to) langInput.value = to;
+  fetch('/api/config').then(r => r.json()).then(cfg => {
+    const from = cfg.fromLang || '';
+    const to   = cfg.toLang   || '';
+    const langDisplay = document.getElementById('bridgeLangSelect');
+    langDisplay.textContent = to || 'not set';
+    langDisplay.dataset.lang = to;
 
-  const updatePill = () => {
-    const f = from || langInput.value;
-    const t = langInput.value;
     const pill = document.getElementById('bridgeLangPill');
-    if (f && t) {
-      pill.textContent = `${f} → ${t}`;
-    } else if (t) {
-      pill.textContent = `→ ${t}`;
+    if (from && to) {
+      pill.textContent = `${from} → ${to}`;
+    } else if (to) {
+      pill.textContent = `→ ${to}`;
     } else {
       pill.textContent = 'Bridge';
     }
+
     const mem = document.getElementById('bridgeMemLabel');
     if (mem) mem.textContent = from ? `${from} Memories Retrieved` : 'Memories Retrieved';
-  };
-
-  langInput.addEventListener('input', updatePill);
-  updatePill();
+  }).catch(() => {});
 }
 
 document.addEventListener('paste', (e) => {
@@ -1055,7 +1411,7 @@ document.addEventListener('paste', (e) => {
 async function submitBridge() {
   const error = document.getElementById('bridgeTextarea').value.trim();
   if (!error) return;
-  const lang = document.getElementById('bridgeLangSelect').value;
+  const lang = document.getElementById('bridgeLangSelect').dataset.lang || '';
   const note = document.getElementById('bridgeNote');
   const btn  = document.getElementById('bridgeSubmit');
 
@@ -1223,11 +1579,15 @@ function renderConceptCloud(sorted) {
   document.getElementById('conceptCloud').innerHTML = sorted.slice(0, 30).map(([name, data]) => {
     const sz = Math.round(11 + (data.count / max) * 5);
     const cls = ageClass(data.lastTime);
-    return `<button class="concept-chip ${cls}" style="font-size:${sz}px"
-      onclick="runConceptQuery(${JSON.stringify(name)})">
+    return `<button class="concept-chip ${cls}" style="font-size:${sz}px" data-concept="${esc(name)}">
       ${esc(name)}<span class="chip-count">×${data.count}</span>
     </button>`;
   }).join('');
+
+  document.getElementById('conceptCloud').onclick = (e) => {
+    const btn = e.target.closest('[data-concept]');
+    if (btn) runConceptQuery(btn.dataset.concept);
+  };
 }
 
 function renderConceptRows(sorted) {
@@ -1235,7 +1595,7 @@ function renderConceptRows(sorted) {
   document.getElementById('conceptRows').innerHTML = sorted.map(([name, data]) => {
     const pct = Math.round((data.count / max) * 100);
     const cls = ageClass(data.lastTime);
-    return `<div class="concept-row ${cls}" onclick="runConceptQuery(${JSON.stringify(name)})">
+    return `<div class="concept-row ${cls}" data-concept="${esc(name)}">
       <span class="cr-name">${esc(name)}</span>
       <div class="cr-bar-wrap">
         <div class="cr-bar"><div class="cr-bar-fill" style="width:${pct}%"></div></div>
@@ -1243,6 +1603,11 @@ function renderConceptRows(sorted) {
       <span class="cr-last">${fmtRelative(data.lastTime)}</span>
     </div>`;
   }).join('');
+
+  document.getElementById('conceptRows').onclick = (e) => {
+    const row = e.target.closest('[data-concept]');
+    if (row) runConceptQuery(row.dataset.concept);
+  };
 }
 
 function runConceptQuery(concept) {
@@ -1257,17 +1622,19 @@ function runConceptQuery(concept) {
 }
 
 function loadEvents() {
-  fetch('/api/events/recent?hours=4').then(r => r.json()).then(d => {
-    allEvents = d.reverse();
+  fetch('/api/events/recent?hours=24').then(r => r.json()).then(d => {
+    allEvents = d;
     renderTimeline();
     updateCount();
+    renderProjectFilters();
   }).catch(() => {});
 }
+setInterval(loadEvents, 10_000);
 function loadStats()  { fetch('/api/stats').then(r => r.json()).then(updateStats).catch(() => {}); }
 
 function updateStats(s) {
   document.getElementById('sbEvents').textContent = (s.totalEvents ?? 0).toLocaleString();
-  document.getElementById('sbConcepts').textContent = s.concepts ?? s.projects?.length ?? 0;
+  document.getElementById('sbConcepts').textContent = s.totalConcepts ?? 0;
   document.getElementById('sbProjects').textContent = s.projects?.length ?? 0;
   document.getElementById('sbMismatches').textContent = s.habitMismatches ?? habitMismatches;
   if (s.paused !== undefined && s.paused !== isPaused) { isPaused = s.paused; updatePauseUI(); }
@@ -1282,6 +1649,7 @@ const FILTER_MAP = {
   SHELL: e => ['terminal_command','terminal_output'].includes(e.type),
 };
 let activeFilter = 'ALL';
+let activeProject = null;
 
 document.querySelectorAll('.filters button').forEach(b => {
   b.addEventListener('click', () => {
@@ -1295,13 +1663,32 @@ document.querySelectorAll('.filters button').forEach(b => {
 function renderTimeline() {
   const el = document.getElementById('timeline');
   const fn = FILTER_MAP[activeFilter] || (() => true);
-  const filtered = allEvents.filter(fn).slice(0, 100);
-  if (!filtered.length) { el.innerHTML = '<div style="padding:16px 20px;font-size:11px;color:var(--ink-mute)">No events yet</div>'; return; }
+  const filtered = allEvents
+    .filter(e => e.type !== 'window_focus')
+    .filter(e => activeProject ? e.project === activeProject : true)
+    .filter(fn)
+    .slice(0, 100);
+  if (!filtered.length) {
+    const isFiltered = activeFilter !== 'ALL';
+    el.innerHTML = isFiltered
+      ? `<div style="padding:16px 20px;font-size:11px;color:var(--ink-mute)">No ${activeFilter.toLowerCase()} events in the last 24 hours.</div>`
+      : `<div style="padding:20px 24px;font-size:11px;color:var(--ink-mute);line-height:1.8" id="emptyState" data-rendered>
+          <div style="font-size:12px;color:var(--ink-2);font-weight:500;margin-bottom:10px">No activity recorded yet</div>
+          <div id="debugStatus" style="margin-bottom:12px;display:flex;flex-direction:column;gap:4px">
+            <div style="color:var(--ink-dim)">Running diagnostics...</div>
+          </div>
+          <button onclick="fireTestEvent()" style="background:var(--amber);color:#0a0d11;border:none;padding:6px 14px;border-radius:3px;font-family:inherit;font-size:10px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;cursor:pointer">Fire test event</button>
+          <span id="testEventStatus" style="margin-left:10px;font-size:10px;color:var(--ink-mute)"></span>
+        </div>`;
+    setTimeout(runDiagnostics, 0);
+    return;
+  }
   el.innerHTML = '';
   filtered.forEach((e, i) => {
     const div = document.createElement('div');
     div.className = 'tl-item ' + tlKind(e) + (i === 0 ? ' active' : '');
-    div.innerHTML = `<div class="tl-dot"></div><div><div class="tl-time">${fmtTime(e.time)}<span class="src">${e.type.replace('_',' ')}</span></div><div class="tl-title">${esc(e.summary)}</div></div>`;
+    const multiProject = new Set(allEvents.map(x => x.project)).size > 1;
+    div.innerHTML = `<div class="tl-dot"></div><div><div class="tl-time">${fmtTime(e.time)}<span class="src">${e.type.replace('_',' ')}</span>${multiProject && e.project ? `<span class="src" style="color:var(--blue);margin-left:4px">${esc(e.project)}</span>` : ''}</div><div class="tl-title">${esc(e.summary)}</div></div>`;
     div.addEventListener('click', () => { document.querySelectorAll('.tl-item').forEach(x => x.classList.remove('active')); div.classList.add('active'); });
     el.appendChild(div);
   });
@@ -1315,6 +1702,25 @@ function tlKind(e) {
   return '';
 }
 function updateCount() { document.getElementById('activityCount').textContent = allEvents.length; }
+
+function renderProjectFilters() {
+  const projects = [...new Set(allEvents.map(e => e.project).filter(p => p && p !== 'unknown' && p !== 'debug'))];
+  const bar = document.getElementById('projectFilters');
+  if (projects.length < 2) { bar.style.display = 'none'; return; }
+  bar.style.display = 'flex';
+  bar.innerHTML = [null, ...projects].map(p => {
+    const label = p || 'All projects';
+    const active = activeProject === p;
+    return `<button style="${active ? 'color:var(--blue);border-color:rgba(106,169,255,0.4);background:rgba(106,169,255,0.06)' : ''}"
+      onclick="setProjectFilter(${p ? `'${p}'` : 'null'})">${p || 'All'}</button>`;
+  }).join('');
+}
+
+function setProjectFilter(project) {
+  activeProject = project;
+  renderProjectFilters();
+  renderTimeline();
+}
 
 // ── Query ──
 let activeMode = 'translate';
@@ -1342,14 +1748,49 @@ async function submitQuery() {
   queryTs = Date.now();
   showLoading();
   try {
-    let url = '/api/query', body = { question: q };
+    let url = '/api/query';
+    let body = { question: q };
     if (activeMode === 'translate') {
       url = '/api/translate';
       if (langPair.from) body.fromLang = langPair.from;
       if (langPair.to)   body.toLang   = langPair.to;
-    } else if (activeMode === 'map_concept') { url = '/api/map-concept'; body = { concept: q }; }
+    } else if (activeMode === 'map_concept') {
+      url = '/api/map-concept'; body = { concept: q };
+    } else if (activeMode === 'explain') {
+      url = '/api/explain';
+    }
+
     const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-    renderResult(await r.json());
+    if (!r.ok || !r.body) throw new Error('Server error');
+
+    const reader = r.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '', insight = '', streamEl = null;
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n'); buffer = lines.pop() ?? '';
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        try {
+          const d = JSON.parse(line.slice(6));
+          if (d.token) {
+            if (!streamEl) {
+              const cc = document.getElementById('centerContent');
+              cc.innerHTML = '<div class="section"><div class="stream-body"></div></div>';
+              streamEl = cc.querySelector('.stream-body');
+            }
+            insight += d.token;
+            // Content is from local AI model only — not user input
+            streamEl.innerHTML = renderBody(insight);
+          }
+          if (d.error) { showError(d.error); return; }
+        } catch {}
+      }
+    }
+    if (!streamEl) showError('No response received — model may still be loading, try again.');
     document.getElementById('sbLatency').textContent = (Date.now() - queryTs) + 'ms';
   } catch (err) { showError(err.message); }
   finally { btn.disabled = false; btn.textContent = 'ASK ↵'; }
@@ -1368,13 +1809,14 @@ function renderResult(data) {
 
   // Parse title from insight
   const sections = parseInsight(data.insight, data.query);
-  if (sections.length && (activeMode === 'translate')) {
-    const parts = data.query.match(/(.+?)\s*(?:in|to)\s*(.+)/i);
-    if (parts) {
+  if (sections.length && data.mode === 'translate') {
+    const from = langPair.from || '';
+    const to   = langPair.to   || '';
+    if (from && to) {
       document.getElementById('h1Title').style.display = '';
-      document.getElementById('h1Title').innerHTML = `<span class="from">${esc(parts[1])}</span><span class="t-arrow">→</span><span class="to">${esc(parts[2])}</span>`;
+      document.getElementById('h1Title').innerHTML = `<span class="from">${esc(from)}</span><span class="t-arrow">→</span><span class="to">${esc(to)}</span>`;
       document.getElementById('translationSub').style.display = '';
-      document.getElementById('translationSub').innerHTML = `Translating from <strong>${esc(parts[1])}</strong> to <strong>${esc(parts[2])}</strong>, grounded in your own codebase.`;
+      document.getElementById('translationSub').innerHTML = `Translating from <strong>${esc(from)}</strong> to <strong>${esc(to)}</strong>, grounded in your own codebase.`;
     } else {
       document.getElementById('h1Title').style.display = '';
       document.getElementById('h1Title').innerHTML = `<span class="to">${esc(data.query)}</span>`;
@@ -1400,6 +1842,7 @@ function renderResult(data) {
 }
 
 function parseInsight(insight, query) {
+  if (!insight) return [{ title: 'Response', body: '(no response)' }];
   const numbered = insight.split(/(?=\n\d{2}\s+[A-Z])/);
   if (numbered.length > 1) {
     return numbered.map(p => {
@@ -1412,13 +1855,34 @@ function parseInsight(insight, query) {
 }
 
 function renderBody(text) {
-  // Code blocks
-  text = text.replace(/```(\w*)\n?([\s\S]*?)```/g, (_, lang, code) =>
-    `<pre style="background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:14px 16px;font-size:12.5px;line-height:1.7;overflow-x:auto;margin:10px 0"><code>${esc(code.trim())}</code></pre>`);
+  // Protect code blocks — extract them before any other transformation
+  const blocks = [];
+  text = text.replace(/```(\w*)\n?([\s\S]*?)```/g, (_, lang, code) => {
+    blocks.push(`<pre style="background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:14px 16px;font-size:12px;line-height:1.7;overflow-x:auto;margin:10px 0"><code style="color:var(--green)">${esc(code.trim())}</code></pre>`);
+    return `\x00B${blocks.length - 1}\x00`;
+  });
   // Inline code
-  text = text.replace(/`([^`]+)`/g, '<code>$1</code>');
-  // Paragraphs
-  return text.split(/\n\n+/).map(p => `<p>${p.replace(/\n/g, '<br>')}</p>`).join('');
+  text = text.replace(/`([^`\n]+)`/g, (_, c) => `<code style="background:var(--panel-2);border:1px solid var(--line);padding:1px 5px;border-radius:3px;font-size:11px;color:var(--green)">${esc(c)}</code>`);
+  // Bold + italic, bold, italic
+  text = text.replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>');
+  text = text.replace(/\*\*(.+?)\*\*/g, '<strong style="color:var(--ink);font-weight:600">$1</strong>');
+  text = text.replace(/\*([^*\n]+)\*/g, '<em style="color:var(--ink-dim)">$1</em>');
+  // Headers
+  text = text.replace(/^### (.+)$/gm, '<h3 style="color:var(--amber);font-size:10px;letter-spacing:0.18em;text-transform:uppercase;margin:18px 0 5px;font-weight:600">$1</h3>');
+  text = text.replace(/^## (.+)$/gm,  '<h2 style="color:var(--amber);font-size:10px;letter-spacing:0.18em;text-transform:uppercase;margin:18px 0 5px;font-weight:600">$1</h2>');
+  text = text.replace(/^# (.+)$/gm,   '<h1 style="color:var(--ink);font-size:15px;font-weight:600;margin:14px 0 6px">$1</h1>');
+  // Restore code blocks
+  text = text.replace(/\x00B(\d+)\x00/g, (_, i) => blocks[i]);
+  // Style ALL CAPS LABEL: lines as amber section headers (fallback when model skips ## markers)
+  text = text.replace(/^([A-Z][A-Z ]{2,}):(\s*)/gm, (_, label) =>
+    `<strong style="color:var(--amber);font-size:10px;letter-spacing:0.16em;display:block;margin:16px 0 4px">${label}:</strong>`);
+  // Paragraphs (skip lines that are already HTML)
+  return text.split(/\n\n+/).map(p => {
+    p = p.trim();
+    if (!p) return '';
+    if (/^<(pre|h[1-6]|ul|ol)/.test(p)) return p;
+    return `<p style="margin:6px 0;line-height:1.7">${p.replace(/\n/g, '<br>')}</p>`;
+  }).join('\n');
 }
 
 function renderMemories(mems) {
@@ -1511,7 +1975,65 @@ function askForHelp() {
   if (!stuckCtx) return;
   document.getElementById('askInput').value = stuckCtx.signals?.join('. ') || 'Help me get unstuck';
   document.getElementById('stuckBanner').classList.remove('visible');
+  // Force find_solution mode regardless of what was previously active
+  activeMode = 'find_solution';
+  document.querySelectorAll('#askModes button').forEach(b => b.classList.toggle('active', b.dataset.mode === 'find_solution'));
   submitQuery();
+}
+
+function runDiagnostics() {
+  const el = document.getElementById('debugStatus');
+  if (!el) return;
+  fetch('/api/debug').then(r => r.json()).then(d => {
+    const rows = [];
+    rows.push(`· Ollama: <strong style="color:${d.ollamaRunning ? 'var(--green)' : 'var(--red)'}">${d.ollamaRunning ? 'running' : 'not reachable'}</strong>`);
+    if (d.ollamaRunning) {
+      const missing = Array.isArray(d.missingModels) ? d.missingModels : [];
+      if (missing.length) {
+        rows.push(`· Missing models: <strong style="color:var(--red)">${missing.join(', ')}</strong> — run <code style="background:var(--panel);padding:1px 4px;border-radius:2px">ollama pull ${missing[0]}</code>`);
+      } else {
+        rows.push(`· Models: <strong style="color:var(--green)">all present</strong>`);
+      }
+    }
+    rows.push(`· Watch paths: <strong style="color:var(--ink-2)">${d.watchPaths?.length ? d.watchPaths.join(', ') : 'none set'}</strong>`);
+    rows.push(`· Queue: <strong style="color:var(--ink-2)">${d.eventQueueLength} pending</strong> · Processing: <strong style="color:var(--ink-2)">${d.processingBatch ? 'yes' : 'no'}</strong>`);
+    el.innerHTML = rows.map(r => `<div>${r}</div>`).join('');
+  }).catch(() => { if (el) el.innerHTML = '<div style="color:var(--red)">Could not reach /api/debug</div>'; });
+}
+
+async function fireTestEvent() {
+  const status = document.getElementById('testEventStatus');
+  if (status) status.textContent = 'firing…';
+  try {
+    const r = await fetch('/api/debug/test-event', { method: 'POST' });
+    const d = await r.json();
+    if (status) status.textContent = d.message || 'fired';
+    setTimeout(loadEvents, 5000);
+  } catch {
+    if (status) status.textContent = 'failed — server not reachable';
+  }
+}
+
+function showSocraticBanner(data) {
+  const banner = document.getElementById('socraticBanner');
+  const fileEl = document.getElementById('socraticBannerFile');
+  const filename = (data.filePath || '').split('/').pop();
+  banner.querySelector('.stuck-title').textContent = '⚡ Socratic session active';
+  fileEl.textContent = 'Answer in the HUD before coding — ' + filename;
+  banner.style.display = 'flex';
+}
+
+function handleSocraticResult(data) {
+  const banner = document.getElementById('socraticBanner');
+  const fileEl = document.getElementById('socraticBannerFile');
+  if (data.passed) {
+    const filename = fileEl.textContent.split('— ').pop() || '';
+    fileEl.textContent = 'Explanation accepted for ' + filename;
+    banner.querySelector('.stuck-title').textContent = '✓ Explanation accepted';
+    setTimeout(() => { banner.style.display = 'none'; }, 3000);
+  } else {
+    banner.style.display = 'none';
+  }
 }
 
 // ── UI states ──

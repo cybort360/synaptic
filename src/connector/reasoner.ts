@@ -26,13 +26,14 @@ export class Reasoner {
       }
     }
 
-    for (const model of [this.config.ollamaReasoningModel, this.config.ollamaModel]) {
+    const models = [...new Set([this.config.ollamaReasoningModel, this.config.ollamaModel].filter(Boolean))];
+    for (const model of models) {
       if (!model) continue;
       try {
         console.log(`[Reasoner] Streaming with: ${model}${imageBase64 ? " (vision)" : ""}`);
         yield* this.ollama.generateStream(model, prompt, {
           temperature: 0.3,
-          numPredict: 4096,
+          numPredict: 1024,
           ...(imageBase64 ? { images: [imageBase64] } : {}),
         });
         return;

@@ -5,7 +5,13 @@
   "excludePatterns": [
     "**/node_modules/**",
     "**/.git/**",
-    "**/*.env"
+    "**/*.env",
+    "**/dist/**",
+    "**/build/**",
+    "**/.next/**",
+    "**/coverage/**",
+    "**/*.lock",
+    "**/*.db"
   ],
   "watchers": {
     "files": true,
@@ -16,8 +22,9 @@
   "fromLang": "",
   "toLang": "",
   "ollamaBaseUrl": "http://localhost:11434",
-  "ollamaModel": "llama3.2",
-  "ollamaReasoningModel": "llama3.1:8b",
+  "ollamaModel": "gemma4:e4b",
+  "visionModel": "gemma4:e4b",
+  "ollamaReasoningModel": "gemma4:e4b",
   "embeddingModel": "nomic-embed-text",
   "reasoningModelApiKey": "",
   "reasoningModelEndpoint": "https://generativelanguage.googleapis.com/v1beta",
@@ -28,5 +35,7 @@
     "low": 7,
     "medium": 30,
     "high": 365
-  }
+  },
+  "socraticMode": false,
+  "socraticStrictness": "followup"
 }

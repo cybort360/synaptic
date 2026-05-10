@@ -110,6 +110,7 @@ export class TerminalCapture {
           data: {
             command,
             isError,
+            project: "terminal",
             ...(screenshot ? { screenshot } : {}),
           },
         };

@@ -11,8 +11,8 @@ import path from "path";
 async function main() {
   console.log(`
   ╔═══════════════════════════════════════╗
-  ║          SYNAPTIC v1.0                ║
-  ║   Your AI Dev Companion (Local-First) ║
+  ║           SYNAPTIC  v1.0             ║
+  ║   local-first AI dev companion       ║
   ╚═══════════════════════════════════════╝
   `);
 
@@ -44,7 +44,7 @@ async function main() {
   connector.start();
   observer.start();
 
-  const server = createServer(connector, archivist, config);
+  const server = createServer(connector, archivist, config, observer);
 
   console.log(`\n[Synaptic] Dashboard: http://localhost:${config.port}`);
   console.log(`[Synaptic] Watching ${config.watchPaths.length} paths`);

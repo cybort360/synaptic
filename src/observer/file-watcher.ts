@@ -1,28 +1,49 @@
 import chokidar, { type FSWatcher } from "chokidar";
 import { eventBus } from "../shared/event-bus.js";
-import type { RawEvent } from "../shared/types.js";
+import type { RawEvent, SynapticConfig } from "../shared/types.js";
+import { BridgeEngine } from "../mentor/bridge-engine.js";
 import path from "path";
 import { readFileSync } from "fs";
 
-/**
- * Watches project directories for file changes.
- * Debounces rapid saves and emits structured events.
- */
+function globToRegex(glob: string): RegExp {
+  let re = "";
+  for (let i = 0; i < glob.length; i++) {
+    const c = glob[i];
+    if (c === "*" && glob[i + 1] === "*") {
+      re += ".*";
+      i++;
+      if (glob[i + 1] === "/") i++;
+    } else if (c === "*") {
+      re += "[^/\\\\]*";
+    } else if (c === "?") {
+      re += "[^/\\\\]";
+    } else if (/[.+^${}()|[\]\\]/.test(c)) {
+      re += "\\" + c;
+    } else {
+      re += c;
+    }
+  }
+  return new RegExp(re);
+}
+
 export class FileWatcher {
   private watcher: FSWatcher | null = null;
   private debounceTimers: Map<string, NodeJS.Timeout> = new Map();
+  private socraticDebounceTimers: Map<string, NodeJS.Timeout> = new Map();
   private debounceMs: number;
 
-  constructor(private watchPaths: string[], debounceMs = 1000) {
+  constructor(private watchPaths: string[], debounceMs = 1000, private config?: SynapticConfig) {
     this.debounceMs = debounceMs;
   }
 
   start() {
-    // Chokidar v4 dropped glob support for `ignored` — strings now do exact
-    // equality matching only. Use a function with regex instead.
-    const IGNORED_RE = /[/\\](node_modules|\.git|dist|build|\.next|coverage)[/\\]|\.lock$/;
+    // Chokidar v4 dropped glob support for `ignored` — use a predicate built from config.excludePatterns.
+    const excludePatterns = this.config?.excludePatterns ?? [];
+    const excludeRegexes = excludePatterns.map(globToRegex);
+    const isIgnored = (p: string) => excludeRegexes.some((re) => re.test(p));
+
     this.watcher = chokidar.watch(this.watchPaths, {
-      ignored: (p: string) => IGNORED_RE.test(p),
+      ignored: isIgnored,
       persistent: true,
       ignoreInitial: true,
     });
@@ -35,6 +56,13 @@ export class FileWatcher {
   }
 
   private handleChange(filePath: string, type: RawEvent["type"]) {
+    // Cancel any pending socratic gate timer for this path on any event
+    const pendingSocratic = this.socraticDebounceTimers.get(filePath);
+    if (pendingSocratic) {
+      clearTimeout(pendingSocratic);
+      this.socraticDebounceTimers.delete(filePath);
+    }
+
     // Debounce rapid saves to the same file
     const existing = this.debounceTimers.get(filePath);
     if (existing) clearTimeout(existing);
@@ -65,23 +93,51 @@ export class FileWatcher {
       };
 
       eventBus.emitRawEvent(event);
+
+      // Socratic gate: debounce 2s before emitting for file_open
+      if (type === "file_open" && this.config?.socraticMode) {
+        const fileLanguage = BridgeEngine.detectLang(filePath);
+        if (fileLanguage !== null) {
+          const socraticTimer = setTimeout(() => {
+            this.socraticDebounceTimers.delete(filePath);
+            eventBus.emitSocraticGate({
+              filePath,
+              fileLanguage,
+              triggerType: "file_open",
+            });
+          }, 2000);
+          this.socraticDebounceTimers.set(filePath, socraticTimer);
+        }
+      }
     }, this.debounceMs);
 
     this.debounceTimers.set(filePath, timer);
   }
 
   private inferProject(filePath: string): string {
-    // Walk up the directory tree to find the nearest package.json or .git
+    // Match against known watch paths first — most reliable signal
+    for (const watchPath of this.watchPaths) {
+      if (filePath.startsWith(watchPath + path.sep) || filePath === watchPath) {
+        return path.basename(watchPath);
+      }
+    }
+    // Fall back to the directory that contains a src/ or packages/ folder
     const parts = filePath.split(path.sep);
     for (let i = parts.length - 1; i >= 0; i--) {
-      const dir = parts.slice(0, i + 1).join(path.sep);
-      // In production, we'd check for package.json/.git existence
-      // For now, use the deepest directory that looks like a project root
       if (parts[i] === "src" || parts[i] === "packages") {
         return parts[i - 1] || "unknown";
       }
     }
     return parts[parts.length - 2] || "unknown";
+  }
+
+  addPaths(newPaths: string[]) {
+    if (!this.watcher) return;
+    const fresh = newPaths.filter(p => !this.watchPaths.includes(p));
+    if (!fresh.length) return;
+    this.watcher.add(fresh);
+    this.watchPaths.push(...fresh);
+    console.log(`[Observer/FileWatcher] Added ${fresh.length} new path(s): ${fresh.join(", ")}`);
   }
 
   stop() {
@@ -91,6 +147,8 @@ export class FileWatcher {
     }
     this.debounceTimers.forEach((timer) => clearTimeout(timer));
     this.debounceTimers.clear();
+    this.socraticDebounceTimers.forEach((timer) => clearTimeout(timer));
+    this.socraticDebounceTimers.clear();
     console.log("[Observer/FileWatcher] Stopped");
   }
 }
