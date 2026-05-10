@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"/>
-<title>Synaptic — The AI That Makes You Explain Yourself</title>
+<title>Synaptic - The AI That Makes You Explain Yourself</title>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
 <meta name="description" content="A local-first AI dev companion powered by Gemma 4. Watches your code, remembers your history, and asks you to explain your intent before you write a line."/>
 <meta property="og:title" content="Synaptic"/>
@@ -42,7 +42,7 @@
     overflow-x: hidden;
   }
 
-  /* ── Nav — terminal prompt style ── */
+  /* ── Nav - terminal prompt style ── */
   nav {
     position: fixed; top: 0; left: 0; right: 0; z-index: 100;
     display: flex; align-items: center;
@@ -375,7 +375,7 @@
 </head>
 <body>
 
-<!-- ── Nav — terminal prompt ── -->
+<!-- ── Nav - terminal prompt ── -->
 <nav>
   <span class="nav-user">synaptic</span><span class="nav-at">@</span><span class="nav-host">local</span><span class="nav-colon">:</span><span class="nav-path">~</span><span class="nav-dollar">$</span>
   <span class="nav-cmd">./synaptic</span>
@@ -428,7 +428,7 @@
       <div class="t-dot t-red"></div>
       <div class="t-dot t-yellow"></div>
       <div class="t-dot t-green"></div>
-      <div class="t-title">synaptic — local-first AI dev companion</div>
+      <div class="t-title">synaptic - local-first AI dev companion</div>
     </div>
     <div class="terminal-body">
       <div class="t-comment"># One command. Server + HUD. Everything local.</div>
@@ -444,7 +444,7 @@
       <div class="t-dim">[Reasoner] Streaming with: <span class="t-amber">gemma4:e4b</span></div>
       <div class="t-dim">[Socratic] Session started for <span class="t-blue">ownership.rs</span></div>
       <br/>
-      <div class="t-amber" style="display:flex;align-items:center;gap:8px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><polygon points="12 2 22 7 22 17 12 22 2 17 2 7"/></svg> HUD active — Cmd+Shift+S to toggle</div>
+      <div class="t-amber" style="display:flex;align-items:center;gap:8px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><polygon points="12 2 22 7 22 17 12 22 2 17 2 7"/></svg> HUD active - Cmd+Shift+S to toggle</div>
     </div>
   </div>
 </section>
@@ -465,13 +465,13 @@
         </p>
         <br/>
         <p class="section-sub">
-          If your answer is vague, it asks a follow-up. If it's solid, you're free to code —
+          If your answer is vague, it asks a follow-up. If it's solid, you're free to code -
           and the session is logged. Over time, your explanations get sharper because
           the bar doesn't lower.
         </p>
         <br/>
         <p class="section-sub" style="color: var(--amber)">
-          This is only possible because Gemma 4 runs locally — fast enough to generate
+          This is only possible because Gemma 4 runs locally - fast enough to generate
           a personalised question within 1.5 seconds of a file save.
         </p>
       </div>
@@ -485,7 +485,7 @@
           </div>
           <div class="sd-question">
             You've been writing JavaScript closures recently.
-            Before you edit this Rust file — how are you thinking
+            Before you edit this Rust file - how are you thinking
             about values that need to be used in multiple places?
           </div>
           <div class="sd-input">
@@ -498,7 +498,7 @@
             <button class="sd-skip">Skip</button>
             <span style="flex:1; text-align:right; font-size:11px; color:var(--ink-dim)">Cmd+Enter to submit</span>
           </div>
-          <div class="sd-verdict">✓ Solid — that's the right mental model.</div>
+          <div class="sd-verdict">✓ Solid - that's the right mental model.</div>
         </div>
       </div>
     </div>
@@ -531,7 +531,7 @@
         <div class="gemma-card-body">
           When you hit a terminal error, your shell history truncates it.
           Synaptic captures a screenshot and Gemma 4 reads the actual stack trace
-          off your screen — full error text, line numbers, the exact constraint violated.
+          off your screen - full error text, line numbers, the exact constraint violated.
           A non-multimodal model can't do this.
         </div>
         <div class="gemma-card-model">gemma4:e4b · multimodal</div>
@@ -540,7 +540,7 @@
         <div class="gemma-card-num">03</div>
         <div class="gemma-card-title">Privacy that's architectural</div>
         <div class="gemma-card-body">
-          Your code, your errors, your Socratic sessions — nothing touches a remote server.
+          Your code, your errors, your Socratic sessions - nothing touches a remote server.
           Gemma 4 runs via Ollama. The SQLite database lives on your machine.
           This isn't a privacy setting. It's the only way the product works.
         </div>
@@ -562,11 +562,11 @@
         <p class="section-sub">
           Synaptic doesn't wait to be asked. It watches your environment continuously,
           compresses events into searchable memories, and surfaces the right context
-          at the right moment — without you lifting a finger.
+          at the right moment - without you lifting a finger.
         </p>
         <br/>
         <p class="section-sub">
-          When you ask a question, the answer is grounded in your history —
+          When you ask a question, the answer is grounded in your history -
           not the internet's code.
         </p>
       </div>
@@ -618,7 +618,7 @@
       <div class="feature-card">
         <div class="feature-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v4c0 1.66 4.03 3 9 3s9-1.34 9-3V5"/><path d="M3 9v4c0 1.66 4.03 3 9 3s9-1.34 9-3V9"/><path d="M3 13v4c0 1.66 4.03 3 9 3s9-1.34 9-3v-4"/></svg></div>
         <div class="feature-title">Persistent memory</div>
-        <div class="feature-desc">Every session, every error, every resolution — stored in a local SQLite database and indexed for semantic search. Synaptic remembers what you did three weeks ago and surfaces it when you need it.</div>
+        <div class="feature-desc">Every session, every error, every resolution - stored in a local SQLite database and indexed for semantic search. Synaptic remembers what you did three weeks ago and surfaces it when you need it.</div>
       </div>
       <div class="feature-card">
         <div class="feature-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 4v6c0 5-3.5 9.5-8 11-4.5-1.5-8-6-8-11V6z"/><polyline points="9 12 11 14 15 10"/></svg></div>
@@ -628,12 +628,12 @@
       <div class="feature-card">
         <div class="feature-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></div>
         <div class="feature-title">Vision error pipeline</div>
-        <div class="feature-desc">On terminal errors, Gemma 4 reads your actual screen via screenshot — not the truncated shell history. Full stack traces, line numbers, exact constraints. Stored verbatim in memory.</div>
+        <div class="feature-desc">On terminal errors, Gemma 4 reads your actual screen via screenshot - not the truncated shell history. Full stack traces, line numbers, exact constraints. Stored verbatim in memory.</div>
       </div>
       <div class="feature-card">
         <div class="feature-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div>
         <div class="feature-title">Habit mismatch detection</div>
-        <div class="feature-desc">When you're learning a new language, Synaptic detects patterns from your old language appearing in new-language files and warns you before you run the code. Proactive — not reactive.</div>
+        <div class="feature-desc">When you're learning a new language, Synaptic detects patterns from your old language appearing in new-language files and warns you before you run the code. Proactive - not reactive.</div>
       </div>
       <div class="feature-card">
         <div class="feature-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
@@ -643,7 +643,7 @@
       <div class="feature-card">
         <div class="feature-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
         <div class="feature-title">Fully local</div>
-        <div class="feature-desc">No API keys. No subscriptions. No telemetry. Gemma 4 runs via Ollama on your machine. Your code history never leaves. This isn't a setting — it's the architecture.</div>
+        <div class="feature-desc">No API keys. No subscriptions. No telemetry. Gemma 4 runs via Ollama on your machine. Your code history never leaves. This isn't a setting - it's the architecture.</div>
       </div>
     </div>
   </div>
@@ -672,7 +672,7 @@
   <div class="container">
     <div class="section-label" style="text-align:center">Synaptic vs Copilot</div>
     <h2 class="section-title" style="text-align:center; margin-bottom: 12px;">Different tools. Different jobs.</h2>
-    <p class="section-sub" style="text-align:center; margin: 0 auto 48px;">Copilot writes code for you. Synaptic helps you become a better developer. They're not competing — but if you're learning a new language, there's no contest.</p>
+    <p class="section-sub" style="text-align:center; margin: 0 auto 48px;">Copilot writes code for you. Synaptic helps you become a better developer. They're not competing - but if you're learning a new language, there's no contest.</p>
 
     <div class="fade-up" style="overflow-x:auto;">
       <table class="compare-table">
@@ -687,7 +687,7 @@
           <tr>
             <td>Memory</td>
             <td class="sy">Remembers your full history across every session</td>
-            <td class="co">No memory — each session starts from zero</td>
+            <td class="co">No memory - each session starts from zero</td>
           </tr>
           <tr>
             <td>Context</td>
@@ -696,17 +696,17 @@
           </tr>
           <tr>
             <td>Privacy</td>
-            <td class="sy">100% local — code never leaves your machine</td>
+            <td class="sy">100% local - code never leaves your machine</td>
             <td class="co">Code sent to Microsoft/GitHub servers</td>
           </tr>
           <tr>
             <td>Cost</td>
-            <td class="sy">Free — Gemma 4 runs locally via Ollama</td>
+            <td class="sy">Free - Gemma 4 runs locally via Ollama</td>
             <td class="co">$10–$19/month</td>
           </tr>
           <tr>
             <td>Language learning</td>
-            <td class="sy">Built for it — grounds explanations in your existing knowledge</td>
+            <td class="sy">Built for it - grounds explanations in your existing knowledge</td>
             <td class="co">Generic suggestions regardless of background</td>
           </tr>
           <tr>
@@ -716,13 +716,13 @@
           </tr>
           <tr>
             <td>Stuck detection</td>
-            <td class="sy">Detects spinning — surfaces help before you ask</td>
-            <td class="co">Passive — only responds when invoked</td>
+            <td class="sy">Detects spinning - surfaces help before you ask</td>
+            <td class="co">Passive - only responds when invoked</td>
           </tr>
           <tr>
             <td>Learning approach</td>
-            <td class="sy">Socratic gate — asks you to explain before you code</td>
-            <td class="co">Autocompletes — can create copy-paste dependency</td>
+            <td class="sy">Socratic gate - asks you to explain before you code</td>
+            <td class="co">Autocompletes - can create copy-paste dependency</td>
           </tr>
         </tbody>
       </table>
@@ -755,7 +755,7 @@
         <br/>
         <div class="install-line"><span class="comment"># 3. Configure</span></div>
         <div class="install-line"><span class="cmd">cp synaptic.config.example.json synaptic.config.json</span></div>
-        <div class="install-line"><span class="comment"># Edit synaptic.config.json — add your watch paths</span></div>
+        <div class="install-line"><span class="comment"># Edit synaptic.config.json - add your watch paths</span></div>
         <br/>
         <div class="install-line"><span class="comment"># 4. Launch</span></div>
         <div class="install-line"><span class="cmd" style="color:var(--amber)">npm run launch</span></div>
@@ -779,7 +779,7 @@
 
 <!-- ── Footer ── -->
 <footer>
-  <div style="display:flex;align-items:center;gap:8px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--amber)" stroke-width="2" stroke-linejoin="round"><polygon points="12 2 22 7 22 17 12 22 2 17 2 7"/></svg> <strong>Synaptic</strong> — local-first AI dev companion</div>
+  <div style="display:flex;align-items:center;gap:8px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--amber)" stroke-width="2" stroke-linejoin="round"><polygon points="12 2 22 7 22 17 12 22 2 17 2 7"/></svg> <strong>Synaptic</strong> - local-first AI dev companion</div>
   <div style="display:flex; gap:24px;">
     <a href="https://github.com/cybort360/synaptic">GitHub</a>
     <a href="docs.html">Docs</a>

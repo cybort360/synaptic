@@ -4,11 +4,11 @@
 
 Most AI tools write code *for* you. Synaptic asks *why* first.
 
-Before you touch a file, Synaptic intercepts you and asks you to articulate your intent — grounded in your own coding history. If your explanation doesn't hold up, it asks a follow-up. When it does, you're free to code. The result: you stop copy-pasting patterns you don't understand and start building real knowledge that sticks.
+Before you touch a file, Synaptic intercepts you and asks you to articulate your intent - grounded in your own coding history. If your explanation doesn't hold up, it asks a follow-up. When it does, you're free to code. The result: you stop copy-pasting patterns you don't understand and start building real knowledge that sticks.
 
-This is the **Socratic gate** — and it's the core of what Synaptic is.
+This is the **Socratic gate** - and it's the core of what Synaptic is.
 
-Beyond that, Synaptic watches your entire development environment silently and builds a model of how *you specifically* think and solve problems. When you're stuck or learning a new language, it surfaces your own past solutions — not generic documentation pulled from the internet.
+Beyond that, Synaptic watches your entire development environment silently and builds a model of how *you specifically* think and solve problems. When you're stuck or learning a new language, it surfaces your own past solutions - not generic documentation pulled from the internet.
 
 Powered entirely by **[Gemma 4](https://deepmind.google/technologies/gemma/)** running locally via [Ollama](https://ollama.com). No subscription. No cloud. No data leaves your machine.
 
@@ -25,7 +25,7 @@ Every few seconds, Synaptic observes your environment:
 
 Raw events are compressed by **Gemma 4** (running locally via Ollama) into structured memories: a summary, extracted concepts, a significance score, and a verbatim error + resolution if one was detected. These memories are stored in a local SQLite database and indexed for semantic search using `nomic-embed-text` embeddings.
 
-When you ask a question, Synaptic retrieves the most relevant memories from your history, builds a context window, and reasons over it with Gemma 4 — answering with your own past solutions as the starting point, not generic knowledge.
+When you ask a question, Synaptic retrieves the most relevant memories from your history, builds a context window, and reasons over it with Gemma 4 - answering with your own past solutions as the starting point, not generic knowledge.
 
 ```
 Files / Terminal / Shell history
@@ -45,26 +45,26 @@ Files / Terminal / Shell history
 
 ## Synaptic vs GitHub Copilot
 
-These are not competing tools — they solve different problems. Copilot writes code *for* you. Synaptic helps you *become* a better developer by understanding how you specifically think and where you get stuck.
+These are not competing tools - they solve different problems. Copilot writes code *for* you. Synaptic helps you *become* a better developer by understanding how you specifically think and where you get stuck.
 
 | | Synaptic | GitHub Copilot |
 |---|---|---|
-| **Memory** | Remembers your full coding history across every session | No memory — each session starts from zero |
+| **Memory** | Remembers your full coding history across every session | No memory - each session starts from zero |
 | **Context** | Your entire dev environment: files, terminal, errors, app switches | Only the file currently open in your editor |
-| **Privacy** | 100% local — code never leaves your machine | Code sent to Microsoft/GitHub servers for processing |
-| **Cost** | Free — runs on open-source Gemma 4 via Ollama | $10–$19/month subscription |
-| **Language learning** | Built for it — grounds explanations in your JS/Python/etc. knowledge | Gives generic suggestions regardless of your background |
+| **Privacy** | 100% local - code never leaves your machine | Code sent to Microsoft/GitHub servers for processing |
+| **Cost** | Free - runs on open-source Gemma 4 via Ollama | $10–$19/month subscription |
+| **Language learning** | Built for it - grounds explanations in your JS/Python/etc. knowledge | Gives generic suggestions regardless of your background |
 | **Habit detection** | Warns you when you apply patterns from your old language that break in your new one | No awareness of language habits or migration paths |
-| **Stuck detection** | Detects when you're spinning (repeated errors, thrashing, app switching) and proactively surfaces help | Passive — only responds when you invoke it |
-| **Error memory** | Tracks every error you hit and how you resolved it — surfaces the fix the next time | No error history |
-| **Learning mode** | Socratic gate — asks you to explain your intent before writing code, building real understanding | Writes code for you, which can create copy-paste dependency |
+| **Stuck detection** | Detects when you're spinning (repeated errors, thrashing, app switching) and proactively surfaces help | Passive - only responds when you invoke it |
+| **Error memory** | Tracks every error you hit and how you resolved it - surfaces the fix the next time | No error history |
+| **Learning mode** | Socratic gate - asks you to explain your intent before writing code, building real understanding | Writes code for you, which can create copy-paste dependency |
 | **Vendor lock-in** | Editor-agnostic, works with any workflow, any OS | Requires GitHub, works best in VS Code |
 | **Data ownership** | SQLite database on your machine, you own it entirely | Training and history handled by Microsoft |
 
 ### The five things Copilot fundamentally cannot do
 
 **1. Remember yesterday.**
-Every time you open VS Code, Copilot starts from nothing. Synaptic accumulates knowledge about your patterns across weeks and months. When you hit an error you've seen before, Synaptic remembers exactly how you solved it last time — Copilot doesn't know it happened.
+Every time you open VS Code, Copilot starts from nothing. Synaptic accumulates knowledge about your patterns across weeks and months. When you hit an error you've seen before, Synaptic remembers exactly how you solved it last time - Copilot doesn't know it happened.
 
 **2. Know when you're stuck before you ask.**
 Copilot waits for you to invoke it. Synaptic watches for signals: three errors in five minutes, the same command run repeatedly, excessive file saves. It surfaces help before you lose the thread. You don't have to know you need help to get it.
@@ -73,31 +73,31 @@ Copilot waits for you to invoke it. Synaptic watches for signals: three errors i
 If you're a JavaScript developer learning Rust and you reach for `try/catch`, Synaptic flags it. It knows your background and actively detects when you're applying a pattern from your old language that will fail in your new one. This is the mistake Copilot would happily autocomplete for you.
 
 **4. Ground answers in your code, not the internet's code.**
-When you ask Copilot "how do I handle errors in Rust?", it answers from its training data. When you ask Synaptic the same thing, it finds the three times you've handled errors in your own code, and explains the Rust equivalent using those specific examples. The answer feels like it came from a colleague who has been watching you work — because it did.
+When you ask Copilot "how do I handle errors in Rust?", it answers from its training data. When you ask Synaptic the same thing, it finds the three times you've handled errors in your own code, and explains the Rust equivalent using those specific examples. The answer feels like it came from a colleague who has been watching you work - because it did.
 
 **5. Keep your code private by design.**
-Copilot's value comes from training on billions of lines of code — and it processes your queries on Microsoft's servers. Synaptic runs Gemma 4 locally. Your code, your errors, your history: none of it leaves your machine. This is non-negotiable for developers working on proprietary systems or under NDA.
+Copilot's value comes from training on billions of lines of code - and it processes your queries on Microsoft's servers. Synaptic runs Gemma 4 locally. Your code, your errors, your history: none of it leaves your machine. This is non-negotiable for developers working on proprietary systems or under NDA.
 
 ---
 
 ## Features
 
-### ⟶ Socratic gate — the headline feature
+### ⟶ Socratic gate - the headline feature
 
 When you open a code file, Synaptic stops you before you type. It reads your last 24 hours of coding activity, identifies what concept or decision is most at stake in this specific file, and asks you one targeted question:
 
-> *"You've been using closures heavily in JavaScript. Before you open this Rust file — how are you planning to handle the fact that Rust doesn't have garbage collection?"*
+> *"You've been using closures heavily in JavaScript. Before you open this Rust file - how are you planning to handle the fact that Rust doesn't have garbage collection?"*
 
-The question isn't generic. It's built from your actual history. Gemma 4 looks at what you've been building, what errors you've hit, and what concepts you've been wrestling with — and asks the one thing most likely to reveal whether you actually understand what you're about to do.
+The question isn't generic. It's built from your actual history. Gemma 4 looks at what you've been building, what errors you've hit, and what concepts you've been wrestling with - and asks the one thing most likely to reveal whether you actually understand what you're about to do.
 
 **Two modes:**
 
 | Mode | Behaviour | Best for |
 |---|---|---|
-| **Follow-up** | Question appears in the HUD. Answer or skip — non-blocking. | Daily learning mode |
+| **Follow-up** | Question appears in the HUD. Answer or skip - non-blocking. | Daily learning mode |
 | **Gate** | HUD persists until Gemma accepts your explanation. Cannot skip. | Structured study, interview prep, pair review |
 
-**Gemma 4 evaluates your answer.** If it's vague ("I'll figure it out as I go"), it asks a sharper follow-up targeting exactly what you glossed over. If it's solid, it lets you through and the session is logged. Over time, your explanations get better — because you've been forced to think before you type, every single day.
+**Gemma 4 evaluates your answer.** If it's vague ("I'll figure it out as I go"), it asks a sharper follow-up targeting exactly what you glossed over. If it's solid, it lets you through and the session is logged. Over time, your explanations get better - because you've been forced to think before you type, every single day.
 
 Enable in Settings → **Socratic Gate**, or directly:
 ```json
@@ -105,7 +105,7 @@ Enable in Settings → **Socratic Gate**, or directly:
 "socraticStrictness": "followup"
 ```
 
-Voice input works in the Socratic panel — `Cmd+Shift+V` while the panel is focused.
+Voice input works in the Socratic panel - `Cmd+Shift+V` while the panel is focused.
 
 ---
 
@@ -117,16 +117,16 @@ Four query modes available from the dashboard:
 
 | Mode | What it does |
 |---|---|
-| **Translate** | "How do I do X in [language]?" — finds your own past code doing the equivalent and maps the pattern across |
+| **Translate** | "How do I do X in [language]?" - finds your own past code doing the equivalent and maps the pattern across |
 | **Explain** | Explains a new concept grounded in concepts you've actually worked with before |
 | **Map Concept** | Maps a new library/keyword to the closest things in your history |
-| **Find Solution** | Semantic search over past errors and fixes — "have I solved something like this before?" |
+| **Find Solution** | Semantic search over past errors and fixes - "have I solved something like this before?" |
 
 ### Mentor Bridge
-Paste an error message from any language. Synaptic explains it using your own coding history as the mental anchor — not generic documentation. Set your source and target language in config and the bridge uses that context automatically.
+Paste an error message from any language. Synaptic explains it using your own coding history as the mental anchor - not generic documentation. Set your source and target language in config and the bridge uses that context automatically.
 
 ### Habit mismatch detection
-Runs continuously in the background. When Synaptic detects a pattern from your history appearing in a new-language file where it won't work, it surfaces a warning. Proactive — doesn't wait for you to ask.
+Runs continuously in the background. When Synaptic detects a pattern from your history appearing in a new-language file where it won't work, it surfaces a warning. Proactive - doesn't wait for you to ask.
 
 ### Stuck detection
 Triggers automatically when two or more of these signals appear in a five-minute window:
@@ -138,7 +138,7 @@ Triggers automatically when two or more of these signals appear in a five-minute
 Shows a banner with the detected signals and a shortcut to ask for help using that exact context.
 
 ### HUD overlay (Electron)
-A small always-on-top overlay (`Cmd+Shift+S` to toggle) for quick queries without leaving your editor. Supports text and voice input. Renders markdown — headers, code blocks, tables.
+A small always-on-top overlay (`Cmd+Shift+S` to toggle) for quick queries without leaving your editor. Supports text and voice input. Renders markdown - headers, code blocks, tables.
 
 ### Voice input
 `Cmd+Shift+V` to push-to-talk. Requires [whisper](https://github.com/openai/whisper) and [ffmpeg](https://ffmpeg.org) installed locally. Falls back gracefully if not available.
@@ -148,15 +148,15 @@ A small always-on-top overlay (`Cmd+Shift+S` to toggle) for quick queries withou
 ## Requirements
 
 - **Node.js 20+**
-- **[Ollama](https://ollama.com)** — local AI runtime that runs Gemma 4 on your machine (free)
-- **[Gemma 4](https://deepmind.google/technologies/gemma/)** via Ollama — the model that powers everything: compression, vision, reasoning, and the Socratic engine
-- **[ffmpeg](https://ffmpeg.org)** + **[whisper](https://github.com/openai/whisper)** — optional, for voice input only
+- **[Ollama](https://ollama.com)** - local AI runtime that runs Gemma 4 on your machine (free)
+- **[Gemma 4](https://deepmind.google/technologies/gemma/)** via Ollama - the model that powers everything: compression, vision, reasoning, and the Socratic engine
+- **[ffmpeg](https://ffmpeg.org)** + **[whisper](https://github.com/openai/whisper)** - optional, for voice input only
 
 ---
 
 ## Installation
 
-### Option A — Dashboard only (server mode)
+### Option A - Dashboard only (server mode)
 
 ```bash
 git clone https://github.com/cybort360/synaptic
@@ -168,7 +168,7 @@ Pull the three models Synaptic uses:
 
 ```bash
 ollama pull gemma4:e4b         # compression, vision, and reasoning
-ollama pull nomic-embed-text   # embeddings — semantic search over your memories
+ollama pull nomic-embed-text   # embeddings - semantic search over your memories
 ```
 
 Copy the example config and edit it:
@@ -189,7 +189,7 @@ On first launch, a setup wizard walks you through choosing what to watch and whi
 
 ---
 
-### Option B — Electron app (HUD + tray icon)
+### Option B - Electron app (HUD + tray icon)
 
 Same setup as above, then:
 
@@ -201,7 +201,7 @@ This starts both the server and the desktop overlay. The app lives in your menu 
 
 ---
 
-### Option C — Build for production
+### Option C - Build for production
 
 ```bash
 npm run build       # compiles TypeScript to dist/
@@ -214,7 +214,7 @@ The Electron app automatically uses the compiled `dist/` if it exists, or falls 
 
 ## Configuration
 
-`synaptic.config.json` is created automatically on first run (from `synaptic.config.example.json`). It is gitignored — your settings stay local.
+`synaptic.config.json` is created automatically on first run (from `synaptic.config.example.json`). It is gitignored - your settings stay local.
 
 ```json
 {
@@ -255,7 +255,7 @@ The Electron app automatically uses the compiled `dist/` if it exists, or falls 
 | Field | Description |
 |---|---|
 | `watchPaths` | Directories to watch. Empty array falls back to the current working directory. |
-| `fromLang` / `toLang` | Optional. Set these to enable habit mismatch detection and the Mentor Bridge. Any language pair works — `"Python"` → `"Go"`, `"Java"` → `"Kotlin"`, etc. Leave empty to use Synaptic as a general memory tool. |
+| `fromLang` / `toLang` | Optional. Set these to enable habit mismatch detection and the Mentor Bridge. Any language pair works - `"Python"` → `"Go"`, `"Java"` → `"Kotlin"`, etc. Leave empty to use Synaptic as a general memory tool. |
 | `ollamaModel` | Fast model for event compression. Runs every few seconds. Default: `gemma4:4b`. |
 | `visionModel` | Vision-capable model for reading terminal screenshots. Default: `gemma4:4b`. |
 | `ollamaReasoningModel` | Reasoning model for queries, stuck detection, habit mismatch, Mentor Bridge, and the Socratic engine. Default: `gemma4:27b`. |
@@ -276,16 +276,16 @@ The Electron app automatically uses the compiled `dist/` if it exists, or falls 
 
 ## Powered by Gemma 4
 
-Synaptic is built around **[Gemma 4](https://deepmind.google/technologies/gemma/)** — Google DeepMind's open model family, running entirely on your machine via Ollama. There are no cloud dependencies by default. Gemma 4 handles every AI task in the pipeline:
+Synaptic is built around **[Gemma 4](https://deepmind.google/technologies/gemma/)** - Google DeepMind's open model family, running entirely on your machine via Ollama. There are no cloud dependencies by default. Gemma 4 handles every AI task in the pipeline:
 
 | Task | Model | When it runs |
 |---|---|---|
-| **Event compression** | `gemma4:e4b` | Every few seconds — turns raw file saves and terminal commands into structured memories |
-| **Vision analysis** | `gemma4:e4b` | On terminal errors (macOS) — reads your screen to extract the exact error text |
-| **Reasoning** | `gemma4:e4b` | On every query — translate, explain, map concept, stuck detection, socratic questions |
-| **Embeddings** | `nomic-embed-text` | After compression — converts memories to vectors for semantic search |
+| **Event compression** | `gemma4:e4b` | Every few seconds - turns raw file saves and terminal commands into structured memories |
+| **Vision analysis** | `gemma4:e4b` | On terminal errors (macOS) - reads your screen to extract the exact error text |
+| **Reasoning** | `gemma4:e4b` | On every query - translate, explain, map concept, stuck detection, socratic questions |
+| **Embeddings** | `nomic-embed-text` | After compression - converts memories to vectors for semantic search |
 
-Gemma 4's multimodal capability is what makes the vision pipeline possible — when you hit an error, Synaptic captures a screenshot and Gemma reads the actual stack trace off your screen before compressing the event.
+Gemma 4's multimodal capability is what makes the vision pipeline possible - when you hit an error, Synaptic captures a screenshot and Gemma reads the actual stack trace off your screen before compressing the event.
 
 **Cloud reasoning (optional):** You can swap the reasoning tier for Gemini 2.0 Flash via Google AI Studio for faster responses on slower machines. Gemma 4 always stays local for compression and vision regardless.
 
@@ -298,18 +298,18 @@ Gemma 4's multimodal capability is what makes the vision pipeline possible — w
 
 The `e4b` model (4B effective parameters) was a deliberate choice, not a default.
 
-**Speed is the constraint.** Synaptic compresses every file save and terminal command into a structured memory — running a compression pass every few seconds in the background while you code. A larger model would create a backlog. With `gemma4:e4b`, compression completes before the next event arrives. The 3-second batch cycle stays clean.
+**Speed is the constraint.** Synaptic compresses every file save and terminal command into a structured memory - running a compression pass every few seconds in the background while you code. A larger model would create a backlog. With `gemma4:e4b`, compression completes before the next event arrives. The 3-second batch cycle stays clean.
 
-**Multimodal was the unlock.** When you hit a terminal error on macOS, Synaptic captures a screenshot and sends it to Gemma before compression. Gemma reads the actual stack trace off your screen — not the shell history, which often truncates. This is only possible with a vision-capable model. A text-only 4B model can't do it. A vision-capable model too large to run locally can't do it. `gemma4:e4b` is the intersection: fast, local, and genuinely multimodal.
+**Multimodal was the unlock.** When you hit a terminal error on macOS, Synaptic captures a screenshot and sends it to Gemma before compression. Gemma reads the actual stack trace off your screen - not the shell history, which often truncates. This is only possible with a vision-capable model. A text-only 4B model can't do it. A vision-capable model too large to run locally can't do it. `gemma4:e4b` is the intersection: fast, local, and genuinely multimodal.
 
 **What breaks with a different model:**
 
 | Alternative | What fails |
 |---|---|
-| A 27B local model | Compression batches pile up — 3-second cycle becomes 30+ seconds, memories fall behind real activity |
-| A non-multimodal 4B | Vision pipeline silently degrades — errors are compressed without reading the actual screen output |
-| A cloud-only model | The entire privacy guarantee breaks — your code, errors, and history leave your machine |
-| No local model at all | Socratic gate can't fire on every file save — latency makes it unusable as a real-time feature |
+| A 27B local model | Compression batches pile up - 3-second cycle becomes 30+ seconds, memories fall behind real activity |
+| A non-multimodal 4B | Vision pipeline silently degrades - errors are compressed without reading the actual screen output |
+| A cloud-only model | The entire privacy guarantee breaks - your code, errors, and history leave your machine |
+| No local model at all | Socratic gate can't fire on every file save - latency makes it unusable as a real-time feature |
 
 The Socratic gate in particular depends on this: it fires within 1.5 seconds of a file save, generates a personalised question, and streams it word-by-word to the HUD. That loop only works because `gemma4:e4b` is fast enough to start generating before the developer has finished opening their editor.
 
@@ -320,16 +320,16 @@ The Socratic gate in particular depends on this: it fires within 1.5 seconds of 
 | Feature | macOS | Linux | Windows |
 |---|---|---|---|
 | File watching | ✅ | ✅ | ✅ |
-| Shell history (zsh/bash) | ✅ | ✅ | — |
-| PowerShell history | — | — | ✅ |
+| Shell history (zsh/bash) | ✅ | ✅ | - |
+| PowerShell history | - | - | ✅ |
 | Terminal error detection | ✅ | ✅ | ✅ |
 | Stuck detection | ✅ | ✅ | ✅ |
-| Screen capture (for vision) | ✅ | — | — |
-| Window/app monitoring | ✅ | — | — |
-| Native folder picker | ✅ | — | — |
+| Screen capture (for vision) | ✅ | - | - |
+| Window/app monitoring | ✅ | - | - |
+| Native folder picker | ✅ | - | - |
 | Electron HUD | ✅ | ✅ | ✅ |
 
-Features marked — degrade gracefully: the server still runs and all other features work.
+Features marked - degrade gracefully: the server still runs and all other features work.
 
 ---
 
@@ -339,10 +339,10 @@ Features marked — degrade gracefully: the server still runs and all other feat
 
 Watches the environment and emits raw events to the internal event bus.
 
-- **FileWatcher** — [chokidar](https://github.com/paulmillr/chokidar)-based, debounced saves, detects create/edit/delete across configured directories
-- **TerminalCapture** — polls shell history (zsh on macOS/Linux, bash fallback, PowerShell on Windows), pattern-matches for errors
-- **WindowMonitor** — tracks active app via AppleScript (macOS only), categorizes by editor/terminal/browser/comms
-- **StuckDetector** — behavioral analysis over a sliding five-minute window, emits stuck signals to trigger auto-assist
+- **FileWatcher** - [chokidar](https://github.com/paulmillr/chokidar)-based, debounced saves, detects create/edit/delete across configured directories
+- **TerminalCapture** - polls shell history (zsh on macOS/Linux, bash fallback, PowerShell on Windows), pattern-matches for errors
+- **WindowMonitor** - tracks active app via AppleScript (macOS only), categorizes by editor/terminal/browser/comms
+- **StuckDetector** - behavioral analysis over a sliding five-minute window, emits stuck signals to trigger auto-assist
 
 All modules communicate only through the event bus. No module talks to another directly.
 
@@ -350,22 +350,22 @@ All modules communicate only through the event bus. No module talks to another d
 
 Receives raw events, compresses them into structured memories, and persists everything.
 
-- **Compressor** — calls the configured Ollama model to turn a raw event into a structured record: `summary`, `concepts[]`, `significance` (0–1), `error_verbatim`, `resolution`
-- **Embedder** — feature-hash embeddings for semantic search (fast, local, no external model required)
-- **SynapticDB** — SQLite via [sql.js](https://github.com/sql-js/sql.js), in-memory with periodic disk writes. Two tables: `events` and `connections`
+- **Compressor** - calls the configured Ollama model to turn a raw event into a structured record: `summary`, `concepts[]`, `significance` (0–1), `error_verbatim`, `resolution`
+- **Embedder** - feature-hash embeddings for semantic search (fast, local, no external model required)
+- **SynapticDB** - SQLite via [sql.js](https://github.com/sql-js/sql.js), in-memory with periodic disk writes. Two tables: `events` and `connections`
 - Significance-based retention: low `< 0.4` kept 7 days, medium 30 days, high `≥ 0.7` kept 365 days
 
 ### Connector
 
 Retrieves relevant memories and reasons over them.
 
-- **Reasoner** — two-tier: cloud API primary (if key set), Ollama local fallback
-- **Prompts** — templates for connection-finding, stuck assistance, translation, habit mismatch detection, and concept mapping
+- **Reasoner** - two-tier: cloud API primary (if key set), Ollama local fallback
+- **Prompts** - templates for connection-finding, stuck assistance, translation, habit mismatch detection, and concept mapping
 - Query flow: semantic search → build context prompt → call model → stream tokens to UI
 
 ### Server
 
-Express HTTP + WebSocket. The dashboard and HUD load from `src/ui/public/`. Config and watcher state are updated live via API — no restart required to add a watch path or toggle a feature.
+Express HTTP + WebSocket. The dashboard and HUD load from `src/ui/public/`. Config and watcher state are updated live via API - no restart required to add a watch path or toggle a feature.
 
 ---
 
@@ -375,14 +375,14 @@ Express HTTP + WebSocket. The dashboard and HUD load from `src/ui/public/`. Conf
 
 | Method | Path | Body | Description |
 |---|---|---|---|
-| `POST` | `/api/query` | `{ question, imageBase64? }` | Ask anything — streams SSE tokens |
-| `POST` | `/api/bridge` | `{ error, lang, concepts?, imageBase64? }` | Mentor bridge — streams SSE tokens |
+| `POST` | `/api/query` | `{ question, imageBase64? }` | Ask anything - streams SSE tokens |
+| `POST` | `/api/bridge` | `{ error, lang, concepts?, imageBase64? }` | Mentor bridge - streams SSE tokens |
 | `POST` | `/api/translate` | `{ question, fromLang?, toLang? }` | Translate a pattern between languages |
 | `POST` | `/api/map-concept` | `{ concept }` | Map a new concept to known ones |
 | `POST` | `/api/voice` | `{ audio (base64), mimeType }` | Transcribe audio via whisper |
 | `POST` | `/api/socratic/respond` | `{ sessionId, answer }` | Submit an explanation to an active Socratic session |
 | `POST` | `/api/socratic/skip` | `{ sessionId }` | Skip the current Socratic session |
-| `GET` | `/api/socratic/session/:id` | — | Get full session history including Q&A turns |
+| `GET` | `/api/socratic/session/:id` | - | Get full session history including Q&A turns |
 
 ### Data endpoints
 
@@ -424,10 +424,10 @@ Connect to `ws://localhost:3777`. Messages are JSON with a `type` and `data` fie
 ```
 synaptic/
 ├── electron/
-│   └── main.cjs                    # Electron main process — tray, HUD window, server spawn
+│   └── main.cjs                    # Electron main process - tray, HUD window, server spawn
 │
 ├── src/
-│   ├── index.ts                    # Entry point — wires up all modules, loads config
+│   ├── index.ts                    # Entry point - wires up all modules, loads config
 │   ├── server.ts                   # Express + WebSocket server
 │   │
 │   ├── observer/
@@ -442,7 +442,7 @@ synaptic/
 │   │   ├── index.ts                # Orchestrates compression pipeline
 │   │   ├── compressor.ts           # Raw event → structured memory via Ollama
 │   │   ├── embeddings.ts           # Feature-hash embeddings for semantic search
-│   │   └── db.ts                   # SQLite (sql.js) — events + connections tables
+│   │   └── db.ts                   # SQLite (sql.js) - events + connections tables
 │   │
 │   ├── connector/
 │   │   ├── index.ts                # Query handler, habit check loop
@@ -450,7 +450,7 @@ synaptic/
 │   │   └── prompts.ts              # All prompt templates
 │   │
 │   ├── mentor/
-│   │   └── bridge-engine.ts        # Mentor Bridge — explains errors via coding history
+│   │   └── bridge-engine.ts        # Mentor Bridge - explains errors via coding history
 │   │
 │   └── shared/
 │       ├── types.ts                # All interfaces, SynapticConfig, DEFAULT_CONFIG
@@ -461,7 +461,7 @@ synaptic/
 │   ├── index.html                  # Dashboard (vanilla JS, no framework)
 │   └── hud.html                    # HUD overlay (Electron)
 │
-├── synaptic.config.example.json    # Config template — copy to synaptic.config.json
+├── synaptic.config.example.json    # Config template - copy to synaptic.config.json
 ├── synaptic.config.json            # Your config (gitignored)
 ├── synaptic.db                     # SQLite database (gitignored)
 ├── package.json
@@ -478,11 +478,11 @@ Synaptic is designed to be explicit about what it observes and where data goes.
 - All events are stored in local SQLite (`synaptic.db`) only
 - All embeddings are computed locally using feature hashing
 - All event compression runs via your local Ollama model
-- Shell history is read-only — never modified
+- Shell history is read-only - never modified
 - No telemetry, no analytics, no external network calls unless you explicitly set an API key
 
 **What leaves your machine (only if you set `reasoningModelApiKey`):**
-- The compressed reasoning prompt — a structured summary of your recent activity, not raw file contents or full code. Raw source code is never sent; only the compressed summaries that the local model already produced.
+- The compressed reasoning prompt - a structured summary of your recent activity, not raw file contents or full code. Raw source code is never sent; only the compressed summaries that the local model already produced.
 
 The first-run wizard makes this explicit and nothing is observed until you confirm your settings.
 
@@ -492,10 +492,10 @@ The first-run wizard makes this explicit and nothing is observed until you confi
 ### Code conventions
 
 - TypeScript, ESM only (`"type": "module"` in package.json)
-- No frameworks — Express, ws, chokidar, sql.js, that's it
-- UI is vanilla JS/HTML — no build step, no bundler
+- No frameworks - Express, ws, chokidar, sql.js, that's it
+- UI is vanilla JS/HTML - no build step, no bundler
 - New modules emit events to `EventBus`, never call other modules directly
-- Config-driven — nothing hardcoded that a user might want to change
+- Config-driven - nothing hardcoded that a user might want to change
 
 ---
 

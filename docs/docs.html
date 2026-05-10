@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"/>
-<title>Synaptic — Documentation</title>
+<title>Synaptic - Documentation</title>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<meta name="description" content="Synaptic documentation — installation, configuration, features, API reference."/>
+<meta name="description" content="Synaptic documentation - installation, configuration, features, API reference."/>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
@@ -238,10 +238,10 @@
       <p class="lead">
         Synaptic is a local-first AI dev companion powered by Gemma 4.
         It watches your development environment, builds a persistent memory of your coding history,
-        and surfaces the right context at the right moment — entirely on your machine.
+        and surfaces the right context at the right moment - entirely on your machine.
       </p>
       <p>
-        The centrepiece is the <strong>Socratic gate</strong> — before you write code, Synaptic asks
+        The centrepiece is the <strong>Socratic gate</strong> - before you write code, Synaptic asks
         you to explain your intent. Gemma 4 evaluates the answer and either lets you through
         or asks a sharper follow-up. Over time, you stop copy-pasting patterns you don't understand.
       </p>
@@ -255,13 +255,13 @@
         <thead><tr><th>Requirement</th><th>Version</th><th>Notes</th></tr></thead>
         <tbody>
           <tr><td>Node.js</td><td>20+</td><td>Required for the server and Electron app</td></tr>
-          <tr><td>Ollama</td><td>Latest</td><td>Runs Gemma 4 locally — <a href="https://ollama.com" target="_blank">ollama.com</a></td></tr>
-          <tr><td>gemma4:e4b</td><td>—</td><td>Compression, vision, and reasoning model</td></tr>
-          <tr><td>nomic-embed-text</td><td>—</td><td>Embedding model for semantic search</td></tr>
+          <tr><td>Ollama</td><td>Latest</td><td>Runs Gemma 4 locally - <a href="https://ollama.com" target="_blank">ollama.com</a></td></tr>
+          <tr><td>gemma4:e4b</td><td>-</td><td>Compression, vision, and reasoning model</td></tr>
+          <tr><td>nomic-embed-text</td><td>-</td><td>Embedding model for semantic search</td></tr>
           <tr><td>macOS</td><td>12+</td><td>Full support. Linux/Windows: file watching + terminal work; vision and HUD are macOS-only.</td></tr>
         </tbody>
       </table>
-      <div class="callout callout-tip">On macOS, Ollama installs as a menu bar app that starts automatically. If <code>ollama serve</code> fails, it's already running — just pull the models.</div>
+      <div class="callout callout-tip">On macOS, Ollama installs as a menu bar app that starts automatically. If <code>ollama serve</code> fails, it's already running - just pull the models.</div>
     </div>
 
     <!-- Installation -->
@@ -295,7 +295,7 @@
             <div class="step-title">Create your config file</div>
             <div class="step-desc">
               <pre><span class="sh">cp</span> synaptic.config.example.json synaptic.config.json</pre>
-              Then edit <code>synaptic.config.json</code> — at minimum, add your project paths to <code>watchPaths</code>.
+              Then edit <code>synaptic.config.json</code> - at minimum, add your project paths to <code>watchPaths</code>.
             </div>
           </div>
         </li>
@@ -332,7 +332,7 @@
     <!-- Config file -->
     <div class="doc-section" id="config-file">
       <h2>Configuration</h2>
-      <p>All settings live in <code>synaptic.config.json</code> at the project root. This file is gitignored — it never gets committed. The example file <code>synaptic.config.example.json</code> shows all available fields with defaults.</p>
+      <p>All settings live in <code>synaptic.config.json</code> at the project root. This file is gitignored - it never gets committed. The example file <code>synaptic.config.example.json</code> shows all available fields with defaults.</p>
       <pre>{
   <span class="kw">"watchPaths"</span>: [<span class="st">"/Users/you/projects/my-app"</span>],
   <span class="kw">"fromLang"</span>: <span class="st">"JavaScript"</span>,
@@ -345,13 +345,13 @@
   <span class="kw">"socraticStrictness"</span>: <span class="st">"followup"</span>,
   <span class="kw">"port"</span>: <span class="nu">3777</span>
 }</pre>
-      <p>Changes made via the Settings panel in the dashboard are written to disk immediately and broadcast to all connected clients via WebSocket — no restart needed.</p>
+      <p>Changes made via the Settings panel in the dashboard are written to disk immediately and broadcast to all connected clients via WebSocket - no restart needed.</p>
     </div>
 
     <!-- Watch paths -->
     <div class="doc-section" id="watch-paths">
       <h2>Watch paths</h2>
-      <p>Synaptic watches the directories in <code>watchPaths</code> for file changes. Add or remove paths in Settings → <strong>Watched Paths</strong>. New paths take effect immediately — no restart required.</p>
+      <p>Synaptic watches the directories in <code>watchPaths</code> for file changes. Add or remove paths in Settings → <strong>Watched Paths</strong>. New paths take effect immediately - no restart required.</p>
       <h3>Exclude patterns</h3>
       <p>Files and directories matching these glob patterns are ignored by default:</p>
       <pre><span class="st">"**/node_modules/**"</span>
@@ -368,15 +368,15 @@
     <!-- Models -->
     <div class="doc-section" id="models">
       <h2>Models</h2>
-      <p>Synaptic uses two tiers — a fast local model for ambient processing, and optionally a cloud model for reasoning.</p>
+      <p>Synaptic uses two tiers - a fast local model for ambient processing, and optionally a cloud model for reasoning.</p>
       <table>
         <thead><tr><th>Field</th><th>Default</th><th>Role</th></tr></thead>
         <tbody>
-          <tr><td>ollamaModel</td><td>gemma4:e4b</td><td>Event compression — runs every 3 seconds</td></tr>
+          <tr><td>ollamaModel</td><td>gemma4:e4b</td><td>Event compression - runs every 3 seconds</td></tr>
           <tr><td>visionModel</td><td>gemma4:e4b</td><td>Terminal screenshot reading on errors</td></tr>
           <tr><td>ollamaReasoningModel</td><td>gemma4:e4b</td><td>Queries, Socratic engine, stuck detection</td></tr>
           <tr><td>embeddingModel</td><td>nomic-embed-text</td><td>Semantic search vectors</td></tr>
-          <tr><td>reasoningModelApiKey</td><td>""</td><td>Optional Google AI Studio key — switches reasoning to Gemini Flash</td></tr>
+          <tr><td>reasoningModelApiKey</td><td>""</td><td>Optional Google AI Studio key - switches reasoning to Gemini Flash</td></tr>
         </tbody>
       </table>
       <h3>Cloud reasoning (optional)</h3>
@@ -386,7 +386,7 @@
     <!-- Language pair -->
     <div class="doc-section" id="language-pair">
       <h2>Language pair</h2>
-      <p>Set <code>fromLang</code> and <code>toLang</code> to enable habit mismatch detection and the Mentor Bridge. Any language pair works — Python → Go, Java → Kotlin, JavaScript → Rust.</p>
+      <p>Set <code>fromLang</code> and <code>toLang</code> to enable habit mismatch detection and the Mentor Bridge. Any language pair works - Python → Go, Java → Kotlin, JavaScript → Rust.</p>
       <p>Change your language pair any time in Settings → <strong>Language Pair</strong>. The Bridge and Translate mode update immediately.</p>
       <div class="callout callout-tip">Leave both fields empty to use Synaptic as a general memory tool without language-specific features.</div>
     </div>
@@ -411,7 +411,7 @@
       <table>
         <thead><tr><th>Mode</th><th>Behaviour</th><th>Best for</th></tr></thead>
         <tbody>
-          <tr><td>followup</td><td>Question appears in HUD. Answer or skip — non-blocking.</td><td>Daily learning, regular use</td></tr>
+          <tr><td>followup</td><td>Question appears in HUD. Answer or skip - non-blocking.</td><td>Daily learning, regular use</td></tr>
           <tr><td>gate</td><td>HUD persists until Gemma accepts your explanation. Cannot skip.</td><td>Structured study, interview prep</td></tr>
         </tbody>
       </table>
@@ -429,7 +429,7 @@
     <!-- Query modes -->
     <div class="doc-section" id="query-modes">
       <h2>Query modes</h2>
-      <p>The dashboard's Query tab offers four modes. All stream tokens as they arrive — you see the first word within seconds.</p>
+      <p>The dashboard's Query tab offers four modes. All stream tokens as they arrive - you see the first word within seconds.</p>
       <div class="mode-grid">
         <div class="mode-card">
           <div class="mode-label">Translate</div>
@@ -469,11 +469,11 @@
 <span class="kw">Compressor</span>  gemma4:e4b → JSON
   summary, concepts[], significance, error_verbatim, resolution
            ↓
-<span class="kw">isConceptEvolution</span>  gate — drops noise, keeps signal
+<span class="kw">isConceptEvolution</span>  gate - drops noise, keeps signal
            ↓
 <span class="kw">Embedder</span>  nomic-embed-text → vector
            ↓
-<span class="kw">SQLite</span>  local database — events + connections tables</pre>
+<span class="kw">SQLite</span>  local database - events + connections tables</pre>
 
       <h3>Significance scoring</h3>
       <table>
@@ -520,7 +520,7 @@
     <!-- Vision pipeline -->
     <div class="doc-section" id="vision-pipeline">
       <h2>Vision pipeline</h2>
-      <p>On macOS, when Synaptic detects a terminal error, it captures a screenshot of your screen before compression. Gemma 4's multimodal capability reads the actual stack trace — including content that might be truncated in shell history.</p>
+      <p>On macOS, when Synaptic detects a terminal error, it captures a screenshot of your screen before compression. Gemma 4's multimodal capability reads the actual stack trace - including content that might be truncated in shell history.</p>
       <p>This produces higher-quality memories for errors: exact line numbers, complete error messages, and the full context visible on screen at the moment the error occurred.</p>
       <div class="callout callout-note">Requires macOS with Accessibility permissions granted to the Synaptic Electron app. Linux and Windows use text-only compression for terminal errors.</div>
     </div>
@@ -574,11 +574,11 @@
       <table>
         <thead><tr><th>Method + Path</th><th>Body</th><th>Response</th></tr></thead>
         <tbody>
-          <tr><td>POST /api/query</td><td>{ question }</td><td>SSE stream — find solution</td></tr>
-          <tr><td>POST /api/explain</td><td>{ question }</td><td>SSE stream — concept explanation</td></tr>
-          <tr><td>POST /api/translate</td><td>{ question, fromLang?, toLang? }</td><td>SSE stream — language translation</td></tr>
-          <tr><td>POST /api/map-concept</td><td>{ concept }</td><td>SSE stream — concept mapping</td></tr>
-          <tr><td>POST /api/bridge</td><td>{ error, lang, concepts?, imageBase64? }</td><td>SSE stream — error explanation</td></tr>
+          <tr><td>POST /api/query</td><td>{ question }</td><td>SSE stream - find solution</td></tr>
+          <tr><td>POST /api/explain</td><td>{ question }</td><td>SSE stream - concept explanation</td></tr>
+          <tr><td>POST /api/translate</td><td>{ question, fromLang?, toLang? }</td><td>SSE stream - language translation</td></tr>
+          <tr><td>POST /api/map-concept</td><td>{ concept }</td><td>SSE stream - concept mapping</td></tr>
+          <tr><td>POST /api/bridge</td><td>{ error, lang, concepts?, imageBase64? }</td><td>SSE stream - error explanation</td></tr>
           <tr><td>POST /api/voice</td><td>{ audio (base64), mimeType }</td><td>{ transcript }</td></tr>
         </tbody>
       </table>
@@ -587,9 +587,9 @@
       <table>
         <thead><tr><th>Method + Path</th><th>Body</th><th>Notes</th></tr></thead>
         <tbody>
-          <tr><td>POST /api/socratic/respond</td><td>{ sessionId, answer }</td><td>Submit explanation — result via WebSocket</td></tr>
+          <tr><td>POST /api/socratic/respond</td><td>{ sessionId, answer }</td><td>Submit explanation - result via WebSocket</td></tr>
           <tr><td>POST /api/socratic/skip</td><td>{ sessionId }</td><td>Skip session. Returns 403 in gate mode.</td></tr>
-          <tr><td>GET /api/socratic/session/:id</td><td>—</td><td>Full session history including Q&A turns</td></tr>
+          <tr><td>GET /api/socratic/session/:id</td><td>-</td><td>Full session history including Q&A turns</td></tr>
         </tbody>
       </table>
 
@@ -604,7 +604,7 @@
           <tr><td>GET /api/events/:id/connections</td><td>Semantic connections for an event</td></tr>
           <tr><td>GET /api/stats</td><td>Total events, connections, concepts, projects</td></tr>
           <tr><td>GET /api/config</td><td>Current configuration (API key redacted)</td></tr>
-          <tr><td>POST /api/config</td><td>Patch config — saves to disk, broadcasts update</td></tr>
+          <tr><td>POST /api/config</td><td>Patch config - saves to disk, broadcasts update</td></tr>
           <tr><td>DELETE /api/events?olderThanDays=N</td><td>Clear old events</td></tr>
         </tbody>
       </table>
@@ -629,25 +629,25 @@
       <h2>Troubleshooting</h2>
 
       <h3>No events in Activity tab</h3>
-      <p>Open the Activity tab — if it says "No activity recorded yet", check the diagnostic panel:</p>
+      <p>Open the Activity tab - if it says "No activity recorded yet", check the diagnostic panel:</p>
       <ul style="color:var(--ink-2); padding-left:20px; margin-bottom:16px; font-size:14px; line-height:2.2;">
-        <li><strong>Ollama not running</strong> — open Ollama.app or run <code>ollama serve</code></li>
-        <li><strong>Models not pulled</strong> — run <code>ollama pull gemma4:e4b</code></li>
-        <li><strong>No watch paths</strong> — add a directory in Settings → Watched Paths</li>
+        <li><strong>Ollama not running</strong> - open Ollama.app or run <code>ollama serve</code></li>
+        <li><strong>Models not pulled</strong> - run <code>ollama pull gemma4:e4b</code></li>
+        <li><strong>No watch paths</strong> - add a directory in Settings → Watched Paths</li>
       </ul>
-      <p>Click <strong>Fire test event</strong> in the diagnostic panel — if an event appears within 5 seconds, the pipeline is working.</p>
+      <p>Click <strong>Fire test event</strong> in the diagnostic panel - if an event appears within 5 seconds, the pipeline is working.</p>
 
       <h3>Electron closes immediately on launch</h3>
       <p>A stale Electron process from a previous session is holding the single-instance lock. Run:</p>
       <pre><span class="sh">pkill</span> -f "Electron"
 <span class="sh">npm run launch</span></pre>
-      <p><code>npm run launch</code> now does this automatically at startup — so this should only happen if you launch Electron directly.</p>
+      <p><code>npm run launch</code> now does this automatically at startup - so this should only happen if you launch Electron directly.</p>
 
       <h3>Socratic gate not firing</h3>
-      <p>Check that <code>socraticMode: true</code> is in your config. Then save any recognized code file (<code>.rs</code>, <code>.ts</code>, <code>.py</code>, etc.) — the gate fires on save, not on open. There's a 30-minute cooldown per file after a session completes.</p>
+      <p>Check that <code>socraticMode: true</code> is in your config. Then save any recognized code file (<code>.rs</code>, <code>.ts</code>, <code>.py</code>, etc.) - the gate fires on save, not on open. There's a 30-minute cooldown per file after a session completes.</p>
 
       <h3>Queries return no response</h3>
-      <p>Check that Ollama is running and the model is pulled. Open <code>http://localhost:3777/api/debug</code> — the response shows <code>ollamaRunning</code> and <code>missingModels</code>. If a model is listed as missing, pull it with <code>ollama pull &lt;model-name&gt;</code>.</p>
+      <p>Check that Ollama is running and the model is pulled. Open <code>http://localhost:3777/api/debug</code> - the response shows <code>ollamaRunning</code> and <code>missingModels</code>. If a model is listed as missing, pull it with <code>ollama pull &lt;model-name&gt;</code>.</p>
 
       <h3>Voice input not working</h3>
       <p>Requires whisper and ffmpeg:</p>
