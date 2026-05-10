@@ -294,7 +294,7 @@ Gemma 4's multimodal capability is what makes the vision pipeline possible — w
 | Native folder picker | ✅ | — | — |
 | Electron HUD | ✅ | ✅ | ✅ |
 
-Features marked — degrade gracefully: the server still runs and all other features work. Linux and Windows contributors welcome — see [Contributing](#contributing).
+Features marked — degrade gracefully: the server still runs and all other features work.
 
 ---
 
@@ -453,35 +453,6 @@ The first-run wizard makes this explicit and nothing is observed until you confi
 
 ---
 
-## Contributing
-
-Pull requests welcome. This is built in public — issues, feedback, and ideas are all useful.
-
-### Getting started
-
-```bash
-git clone https://github.com/cybort360/synaptic
-cd synaptic
-npm install
-cp synaptic.config.example.json synaptic.config.json
-npm run dev
-```
-
-### Development workflow
-
-```bash
-npm run dev       # tsx watch mode — restarts on source changes
-npm run build     # compile TypeScript to dist/
-npm run electron  # Electron app (uses dist/ if built, tsx if not)
-```
-
-### Areas that need work
-
-- **Linux window monitoring** — `window-monitor.ts` uses AppleScript (macOS only). A `xdotool` or `wmctrl` implementation for Linux X11/Wayland would be a great addition.
-- **Windows window monitoring** — same gap, needs a PowerShell or Win32 API approach.
-- **Embeddings** — uses `nomic-embed-text` via Ollama by default. Falls back to feature hashing in `embeddings.ts` if the model is unavailable or not pulled.
-- **Tests** — there are none. The core pipeline (compress → embed → store → retrieve → reason) is the right place to start.
-- **Model benchmarks** — compression quality varies significantly by model. Documenting which models produce the best structured output would help new users choose.
 
 ### Code conventions
 
