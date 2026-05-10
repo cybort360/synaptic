@@ -246,7 +246,7 @@
     transition: border-color .2s;
   }
   .feature-card:hover { border-color: var(--line-2); }
-  .feature-icon { font-size: 24px; margin-bottom: 14px; }
+  .feature-icon { margin-bottom: 16px; color: var(--amber); }
   .feature-title { font-size: 14px; font-weight: 600; color: var(--ink); margin-bottom: 8px; }
   .feature-desc { font-size: 12px; color: var(--ink-dim); line-height: 1.7; font-weight: 300; }
 
@@ -330,7 +330,7 @@
 <!-- ── Nav ── -->
 <nav>
   <a href="#" class="nav-logo">
-    <span class="nav-logo-icon">⬡</span>
+    <span class="nav-logo-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><polygon points="12 2 22 7 22 17 12 22 2 17 2 7"/></svg></span>
     SYNAPTIC
   </a>
   <div class="nav-links">
@@ -338,6 +338,7 @@
     <a href="#features">Features</a>
     <a href="#vs-copilot">vs Copilot</a>
     <a href="#install">Install</a>
+    <a href="docs.html">Docs</a>
   </div>
   <a href="https://github.com/cybort360/synaptic" class="nav-cta" target="_blank">
     <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.44 9.8 8.2 11.38.6.11.82-.26.82-.58 0-.28-.01-1.03-.02-2.03-3.34.73-4.04-1.61-4.04-1.61-.55-1.39-1.34-1.76-1.34-1.76-1.09-.75.08-.73.08-.73 1.21.08 1.84 1.24 1.84 1.24 1.07 1.84 2.81 1.3 3.5 1 .11-.78.42-1.3.76-1.6-2.67-.3-5.47-1.33-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.12-.3-.54-1.52.12-3.17 0 0 1.01-.32 3.3 1.23a11.5 11.5 0 0 1 3-.4c1.02.005 2.04.14 3 .4 2.28-1.55 3.29-1.23 3.29-1.23.66 1.65.24 2.87.12 3.17.77.84 1.24 1.91 1.24 3.22 0 4.61-2.81 5.63-5.48 5.92.43.37.81 1.1.81 2.22 0 1.6-.01 2.9-.01 3.29 0 .32.21.7.82.58C20.57 21.8 24 17.3 24 12c0-6.63-5.37-12-12-12z"/></svg>
@@ -393,7 +394,7 @@
       <div class="t-dim">[Reasoner] Streaming with: <span class="t-amber">gemma4:e4b</span></div>
       <div class="t-dim">[Socratic] Session started for <span class="t-blue">ownership.rs</span></div>
       <br/>
-      <div class="t-amber">⬡  HUD active — Cmd+Shift+S to toggle</div>
+      <div class="t-amber" style="display:flex;align-items:center;gap:8px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><polygon points="12 2 22 7 22 17 12 22 2 17 2 7"/></svg> HUD active — Cmd+Shift+S to toggle</div>
     </div>
   </div>
 </section>
@@ -565,32 +566,32 @@
 
     <div class="features-grid fade-up">
       <div class="feature-card">
-        <div class="feature-icon">🧠</div>
+        <div class="feature-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v4c0 1.66 4.03 3 9 3s9-1.34 9-3V5"/><path d="M3 9v4c0 1.66 4.03 3 9 3s9-1.34 9-3V9"/><path d="M3 13v4c0 1.66 4.03 3 9 3s9-1.34 9-3v-4"/></svg></div>
         <div class="feature-title">Persistent memory</div>
         <div class="feature-desc">Every session, every error, every resolution — stored in a local SQLite database and indexed for semantic search. Synaptic remembers what you did three weeks ago and surfaces it when you need it.</div>
       </div>
       <div class="feature-card">
-        <div class="feature-icon">⟶</div>
+        <div class="feature-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 4v6c0 5-3.5 9.5-8 11-4.5-1.5-8-6-8-11V6z"/><polyline points="9 12 11 14 15 10"/></svg></div>
         <div class="feature-title">Socratic gate</div>
         <div class="feature-desc">Before you edit a file, Synaptic asks you to explain your intent. Gemma 4 evaluates the answer and either lets you through or asks a sharper follow-up targeting exactly what you glossed over.</div>
       </div>
       <div class="feature-card">
-        <div class="feature-icon">👁</div>
+        <div class="feature-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></div>
         <div class="feature-title">Vision error pipeline</div>
         <div class="feature-desc">On terminal errors, Gemma 4 reads your actual screen via screenshot — not the truncated shell history. Full stack traces, line numbers, exact constraints. Stored verbatim in memory.</div>
       </div>
       <div class="feature-card">
-        <div class="feature-icon">⚡</div>
+        <div class="feature-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div>
         <div class="feature-title">Habit mismatch detection</div>
         <div class="feature-desc">When you're learning a new language, Synaptic detects patterns from your old language appearing in new-language files and warns you before you run the code. Proactive — not reactive.</div>
       </div>
       <div class="feature-card">
-        <div class="feature-icon">🔍</div>
+        <div class="feature-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
         <div class="feature-title">Four query modes</div>
         <div class="feature-desc">Translate (JS patterns → Rust), Explain (grounded in your history), Map Concept (to things you already know), Find Solution (have I solved this before?). All streaming, all personal.</div>
       </div>
       <div class="feature-card">
-        <div class="feature-icon">🔒</div>
+        <div class="feature-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
         <div class="feature-title">Fully local</div>
         <div class="feature-desc">No API keys. No subscriptions. No telemetry. Gemma 4 runs via Ollama on your machine. Your code history never leaves. This isn't a setting — it's the architecture.</div>
       </div>
@@ -607,7 +608,7 @@
     <h2 class="section-title" style="text-align:center; margin-bottom: 40px;">See the Socratic gate fire</h2>
     <div class="video-wrap fade-up">
       <div class="video-placeholder">
-        <div class="play-btn">▶</div>
+        <div class="play-btn"><svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg></div>
         <div style="font-size:12px; letter-spacing:0.08em">Demo video coming soon</div>
       </div>
     </div>
@@ -628,7 +629,7 @@
         <thead>
           <tr>
             <th></th>
-            <th class="col-sy">⬡ Synaptic</th>
+            <th class="col-sy" style="display:table-cell"><span style="display:inline-flex;align-items:center;gap:6px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><polygon points="12 2 22 7 22 17 12 22 2 17 2 7"/></svg> Synaptic</span></th>
             <th>GitHub Copilot</th>
           </tr>
         </thead>
@@ -728,10 +729,10 @@
 
 <!-- ── Footer ── -->
 <footer>
-  <div>⬡ <strong>Synaptic</strong> — local-first AI dev companion</div>
+  <div style="display:flex;align-items:center;gap:8px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--amber)" stroke-width="2" stroke-linejoin="round"><polygon points="12 2 22 7 22 17 12 22 2 17 2 7"/></svg> <strong>Synaptic</strong> — local-first AI dev companion</div>
   <div style="display:flex; gap:24px;">
     <a href="https://github.com/cybort360/synaptic">GitHub</a>
-    <a href="https://github.com/cybort360/synaptic#readme">Docs</a>
+    <a href="docs.html">Docs</a>
     <a href="https://ollama.com" target="_blank">Ollama</a>
     <a href="https://deepmind.google/technologies/gemma/" target="_blank">Gemma 4</a>
   </div>

@@ -1,0 +1,681 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<title>Synaptic — Documentation</title>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta name="description" content="Synaptic documentation — installation, configuration, features, API reference."/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg:      #080b0f;
+    --bg-2:    #0d1117;
+    --panel:   #111827;
+    --line:    #1f2937;
+    --line-2:  #374151;
+    --ink:     #f1f5f9;
+    --ink-2:   #94a3b8;
+    --ink-dim: #64748b;
+    --amber:   #f59e0b;
+    --green:   #10b981;
+    --red:     #ef4444;
+    --blue:    #60a5fa;
+    --sidebar: 260px;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-size: 14px;
+    line-height: 1.7;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── Top bar ── */
+  .topbar {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    height: 56px; display: flex; align-items: center;
+    padding: 0 24px; gap: 24px;
+    background: rgba(8,11,15,0.92);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--line);
+  }
+  .topbar-logo { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 14px; color: var(--ink); text-decoration: none; white-space: nowrap; }
+  .topbar-logo svg { color: var(--amber); }
+  .topbar-divider { width: 1px; height: 20px; background: var(--line); }
+  .topbar-title { font-size: 12px; color: var(--ink-dim); letter-spacing: 0.08em; text-transform: uppercase; }
+  .topbar-links { margin-left: auto; display: flex; gap: 24px; }
+  .topbar-links a { font-size: 11px; color: var(--ink-dim); text-decoration: none; letter-spacing: 0.08em; text-transform: uppercase; transition: color .15s; }
+  .topbar-links a:hover { color: var(--amber); }
+
+  /* ── Layout ── */
+  .layout { display: flex; padding-top: 56px; min-height: 100vh; }
+
+  /* ── Sidebar ── */
+  .sidebar {
+    position: fixed; top: 56px; left: 0; bottom: 0;
+    width: var(--sidebar); overflow-y: auto;
+    border-right: 1px solid var(--line);
+    background: var(--bg-2);
+    padding: 24px 0 48px;
+  }
+  .sidebar::-webkit-scrollbar { width: 4px; }
+  .sidebar::-webkit-scrollbar-thumb { background: var(--line-2); border-radius: 2px; }
+
+  .sidebar-group { margin-bottom: 28px; }
+  .sidebar-group-label {
+    font-size: 9px; letter-spacing: 0.22em; text-transform: uppercase;
+    color: var(--ink-dim); font-weight: 600;
+    padding: 0 20px; margin-bottom: 4px;
+  }
+  .sidebar-link {
+    display: block; padding: 6px 20px;
+    font-size: 12px; color: var(--ink-dim);
+    text-decoration: none; transition: color .12s, background .12s;
+    border-left: 2px solid transparent;
+  }
+  .sidebar-link:hover { color: var(--ink); background: rgba(255,255,255,0.03); }
+  .sidebar-link.active { color: var(--amber); border-left-color: var(--amber); background: rgba(245,158,11,0.06); }
+
+  /* ── Content ── */
+  .content {
+    margin-left: var(--sidebar);
+    flex: 1; max-width: 800px;
+    padding: 56px 64px 120px;
+  }
+
+  /* ── Typography ── */
+  .doc-section { margin-bottom: 80px; }
+  .doc-section + .doc-section { border-top: 1px solid var(--line); padding-top: 64px; }
+
+  h1 { font-size: 32px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 12px; line-height: 1.2; }
+  h2 { font-size: 22px; font-weight: 700; letter-spacing: -0.01em; margin: 48px 0 16px; line-height: 1.3; }
+  h3 { font-size: 15px; font-weight: 600; color: var(--amber); letter-spacing: 0.04em; text-transform: uppercase; margin: 32px 0 12px; }
+  p { color: var(--ink-2); margin-bottom: 16px; font-size: 14px; line-height: 1.8; font-weight: 300; }
+  p strong { color: var(--ink); font-weight: 600; }
+  p a { color: var(--amber); text-decoration: none; }
+  p a:hover { text-decoration: underline; }
+
+  .lead { font-size: 16px; color: var(--ink-2); margin-bottom: 32px; line-height: 1.7; border-left: 3px solid var(--amber); padding-left: 20px; font-weight: 300; }
+
+  /* ── Code ── */
+  pre {
+    background: var(--bg-2); border: 1px solid var(--line);
+    border-radius: 8px; padding: 20px 24px;
+    overflow-x: auto; margin: 20px 0;
+    font-size: 13px; line-height: 1.8;
+  }
+  pre::-webkit-scrollbar { height: 4px; }
+  pre::-webkit-scrollbar-thumb { background: var(--line-2); border-radius: 2px; }
+  code { background: var(--panel); border: 1px solid var(--line); padding: 1px 6px; border-radius: 3px; font-size: 12px; color: var(--amber); font-family: inherit; }
+  pre code { background: none; border: none; padding: 0; color: inherit; font-size: inherit; }
+
+  .sh { color: var(--green); }
+  .cm { color: var(--ink-dim); }
+  .kw { color: var(--amber); }
+  .st { color: #86efac; }
+  .nu { color: var(--blue); }
+
+  /* ── Tables ── */
+  table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 13px; }
+  th { text-align: left; padding: 10px 16px; font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-dim); border-bottom: 2px solid var(--line); }
+  td { padding: 12px 16px; border-bottom: 1px solid var(--line); color: var(--ink-2); vertical-align: top; line-height: 1.6; }
+  td:first-child { color: var(--amber); font-size: 12px; white-space: nowrap; }
+  tr:hover td { background: rgba(255,255,255,0.02); }
+
+  /* ── Callouts ── */
+  .callout {
+    border-radius: 8px; padding: 16px 20px; margin: 20px 0;
+    border: 1px solid; font-size: 13px; line-height: 1.7;
+  }
+  .callout-tip { background: rgba(16,185,129,0.06); border-color: rgba(16,185,129,0.25); color: var(--ink-2); }
+  .callout-tip::before { content: "TIP  "; color: var(--green); font-weight: 700; letter-spacing: 0.1em; }
+  .callout-note { background: rgba(96,165,250,0.06); border-color: rgba(96,165,250,0.2); color: var(--ink-2); }
+  .callout-note::before { content: "NOTE  "; color: var(--blue); font-weight: 700; letter-spacing: 0.1em; }
+  .callout-warn { background: rgba(245,158,11,0.06); border-color: rgba(245,158,11,0.25); color: var(--ink-2); }
+  .callout-warn::before { content: "WARN  "; color: var(--amber); font-weight: 700; letter-spacing: 0.1em; }
+
+  /* ── Steps ── */
+  .steps { list-style: none; margin: 20px 0; }
+  .steps li { display: flex; gap: 20px; margin-bottom: 28px; }
+  .step-num {
+    width: 28px; height: 28px; flex-shrink: 0;
+    border-radius: 50%; border: 1px solid var(--amber);
+    color: var(--amber); font-size: 11px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    margin-top: 2px;
+  }
+  .step-body { flex: 1; }
+  .step-title { font-size: 14px; font-weight: 600; color: var(--ink); margin-bottom: 6px; }
+  .step-desc { font-size: 13px; color: var(--ink-dim); line-height: 1.7; font-weight: 300; }
+
+  /* ── Mode cards ── */
+  .mode-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 20px 0; }
+  .mode-card { background: var(--bg-2); border: 1px solid var(--line); border-radius: 8px; padding: 20px; transition: border-color .15s; }
+  .mode-card:hover { border-color: var(--line-2); }
+  .mode-label { font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--amber); font-weight: 600; margin-bottom: 8px; }
+  .mode-title { font-size: 14px; font-weight: 600; color: var(--ink); margin-bottom: 6px; }
+  .mode-desc { font-size: 12px; color: var(--ink-dim); line-height: 1.6; font-weight: 300; }
+  .mode-endpoint { display: inline-block; margin-top: 10px; font-size: 10px; color: var(--ink-dim); background: var(--panel); border: 1px solid var(--line); padding: 2px 8px; border-radius: 3px; }
+  @media (max-width: 640px) { .mode-grid { grid-template-columns: 1fr; } }
+
+  /* ── Responsive ── */
+  @media (max-width: 900px) {
+    .sidebar { display: none; }
+    .content { margin-left: 0; padding: 32px 24px 80px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ── Topbar ── -->
+<div class="topbar">
+  <a href="index.html" class="topbar-logo">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><polygon points="12 2 22 7 22 17 12 22 2 17 2 7"/></svg>
+    SYNAPTIC
+  </a>
+  <div class="topbar-divider"></div>
+  <span class="topbar-title">Documentation</span>
+  <div class="topbar-links">
+    <a href="index.html">Home</a>
+    <a href="https://github.com/cybort360/synaptic" target="_blank">GitHub</a>
+  </div>
+</div>
+
+<!-- ── Layout ── -->
+<div class="layout">
+
+  <!-- ── Sidebar ── -->
+  <nav class="sidebar">
+    <div class="sidebar-group">
+      <div class="sidebar-group-label">Getting Started</div>
+      <a href="#overview" class="sidebar-link active">Overview</a>
+      <a href="#requirements" class="sidebar-link">Requirements</a>
+      <a href="#installation" class="sidebar-link">Installation</a>
+      <a href="#first-run" class="sidebar-link">First run</a>
+    </div>
+    <div class="sidebar-group">
+      <div class="sidebar-group-label">Configuration</div>
+      <a href="#config-file" class="sidebar-link">Config file</a>
+      <a href="#watch-paths" class="sidebar-link">Watch paths</a>
+      <a href="#models" class="sidebar-link">Models</a>
+      <a href="#language-pair" class="sidebar-link">Language pair</a>
+    </div>
+    <div class="sidebar-group">
+      <div class="sidebar-group-label">Features</div>
+      <a href="#socratic-gate" class="sidebar-link">Socratic gate</a>
+      <a href="#query-modes" class="sidebar-link">Query modes</a>
+      <a href="#memory-pipeline" class="sidebar-link">Memory pipeline</a>
+      <a href="#habit-detection" class="sidebar-link">Habit detection</a>
+      <a href="#stuck-detection" class="sidebar-link">Stuck detection</a>
+      <a href="#vision-pipeline" class="sidebar-link">Vision pipeline</a>
+    </div>
+    <div class="sidebar-group">
+      <div class="sidebar-group-label">Interface</div>
+      <a href="#dashboard" class="sidebar-link">Dashboard</a>
+      <a href="#hud" class="sidebar-link">HUD overlay</a>
+      <a href="#voice-input" class="sidebar-link">Voice input</a>
+    </div>
+    <div class="sidebar-group">
+      <div class="sidebar-group-label">Reference</div>
+      <a href="#api" class="sidebar-link">API endpoints</a>
+      <a href="#troubleshooting" class="sidebar-link">Troubleshooting</a>
+    </div>
+  </nav>
+
+  <!-- ── Content ── -->
+  <main class="content">
+
+    <!-- Overview -->
+    <div class="doc-section" id="overview">
+      <h1>Documentation</h1>
+      <p class="lead">
+        Synaptic is a local-first AI dev companion powered by Gemma 4.
+        It watches your development environment, builds a persistent memory of your coding history,
+        and surfaces the right context at the right moment — entirely on your machine.
+      </p>
+      <p>
+        The centrepiece is the <strong>Socratic gate</strong> — before you write code, Synaptic asks
+        you to explain your intent. Gemma 4 evaluates the answer and either lets you through
+        or asks a sharper follow-up. Over time, you stop copy-pasting patterns you don't understand.
+      </p>
+      <div class="callout callout-note">Everything runs locally. No API keys required. Your code, errors, and history never leave your machine.</div>
+    </div>
+
+    <!-- Requirements -->
+    <div class="doc-section" id="requirements">
+      <h2>Requirements</h2>
+      <table>
+        <thead><tr><th>Requirement</th><th>Version</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td>Node.js</td><td>20+</td><td>Required for the server and Electron app</td></tr>
+          <tr><td>Ollama</td><td>Latest</td><td>Runs Gemma 4 locally — <a href="https://ollama.com" target="_blank">ollama.com</a></td></tr>
+          <tr><td>gemma4:e4b</td><td>—</td><td>Compression, vision, and reasoning model</td></tr>
+          <tr><td>nomic-embed-text</td><td>—</td><td>Embedding model for semantic search</td></tr>
+          <tr><td>macOS</td><td>12+</td><td>Full support. Linux/Windows: file watching + terminal work; vision and HUD are macOS-only.</td></tr>
+        </tbody>
+      </table>
+      <div class="callout callout-tip">On macOS, Ollama installs as a menu bar app that starts automatically. If <code>ollama serve</code> fails, it's already running — just pull the models.</div>
+    </div>
+
+    <!-- Installation -->
+    <div class="doc-section" id="installation">
+      <h2>Installation</h2>
+      <ul class="steps">
+        <li>
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <div class="step-title">Clone and install dependencies</div>
+            <div class="step-desc">
+              <pre><span class="sh">git clone</span> https://github.com/cybort360/synaptic
+<span class="sh">cd</span> synaptic
+<span class="sh">npm install</span></pre>
+            </div>
+          </div>
+        </li>
+        <li>
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <div class="step-title">Pull the AI models via Ollama</div>
+            <div class="step-desc">
+              <pre><span class="sh">ollama pull</span> gemma4:e4b        <span class="cm"># compression + vision + reasoning</span>
+<span class="sh">ollama pull</span> nomic-embed-text   <span class="cm"># semantic search embeddings</span></pre>
+            </div>
+          </div>
+        </li>
+        <li>
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <div class="step-title">Create your config file</div>
+            <div class="step-desc">
+              <pre><span class="sh">cp</span> synaptic.config.example.json synaptic.config.json</pre>
+              Then edit <code>synaptic.config.json</code> — at minimum, add your project paths to <code>watchPaths</code>.
+            </div>
+          </div>
+        </li>
+        <li>
+          <div class="step-num">4</div>
+          <div class="step-body">
+            <div class="step-title">Launch</div>
+            <div class="step-desc">
+              <pre><span class="sh">npm run launch</span>   <span class="cm"># starts server + opens Electron HUD</span>
+<span class="cm"># or, server only:</span>
+<span class="sh">npm run dev</span></pre>
+              The dashboard opens at <code>http://localhost:3777</code>. The HUD overlay toggles with <code>Cmd+Shift+S</code>.
+            </div>
+          </div>
+        </li>
+      </ul>
+    </div>
+
+    <!-- First run -->
+    <div class="doc-section" id="first-run">
+      <h2>First run</h2>
+      <p>On first launch, a setup wizard walks you through:</p>
+      <ul style="color:var(--ink-2); padding-left:20px; margin-bottom:16px; font-size:14px; line-height:2;">
+        <li>Choosing what to observe (files, terminal, windows, shell history)</li>
+        <li>Adding directories to watch</li>
+        <li>Selecting a reasoning model (Local via Gemma 4, or Cloud via Gemini Flash)</li>
+        <li>Setting your language pair for habit detection and translation</li>
+        <li>Enabling the Socratic gate</li>
+      </ul>
+      <p>Nothing is observed until you complete the wizard and click <strong>Start Observing</strong>.</p>
+      <div class="callout callout-tip">Save a file in a watched directory after setup. Synaptic will compress it within 3 seconds and it will appear in the Activity tab.</div>
+    </div>
+
+    <!-- Config file -->
+    <div class="doc-section" id="config-file">
+      <h2>Configuration</h2>
+      <p>All settings live in <code>synaptic.config.json</code> at the project root. This file is gitignored — it never gets committed. The example file <code>synaptic.config.example.json</code> shows all available fields with defaults.</p>
+      <pre>{
+  <span class="kw">"watchPaths"</span>: [<span class="st">"/Users/you/projects/my-app"</span>],
+  <span class="kw">"fromLang"</span>: <span class="st">"JavaScript"</span>,
+  <span class="kw">"toLang"</span>: <span class="st">"Rust"</span>,
+  <span class="kw">"ollamaModel"</span>: <span class="st">"gemma4:e4b"</span>,
+  <span class="kw">"visionModel"</span>: <span class="st">"gemma4:e4b"</span>,
+  <span class="kw">"ollamaReasoningModel"</span>: <span class="st">"gemma4:e4b"</span>,
+  <span class="kw">"embeddingModel"</span>: <span class="st">"nomic-embed-text"</span>,
+  <span class="kw">"socraticMode"</span>: <span class="nu">true</span>,
+  <span class="kw">"socraticStrictness"</span>: <span class="st">"followup"</span>,
+  <span class="kw">"port"</span>: <span class="nu">3777</span>
+}</pre>
+      <p>Changes made via the Settings panel in the dashboard are written to disk immediately and broadcast to all connected clients via WebSocket — no restart needed.</p>
+    </div>
+
+    <!-- Watch paths -->
+    <div class="doc-section" id="watch-paths">
+      <h2>Watch paths</h2>
+      <p>Synaptic watches the directories in <code>watchPaths</code> for file changes. Add or remove paths in Settings → <strong>Watched Paths</strong>. New paths take effect immediately — no restart required.</p>
+      <h3>Exclude patterns</h3>
+      <p>Files and directories matching these glob patterns are ignored by default:</p>
+      <pre><span class="st">"**/node_modules/**"</span>
+<span class="st">"**/.git/**"</span>
+<span class="st">"**/*.env"</span>
+<span class="st">"**/dist/**"</span>
+<span class="st">"**/build/**"</span>
+<span class="st">"**/.next/**"</span>
+<span class="st">"**/*.db"</span>
+<span class="st">"**/*.lock"</span></pre>
+      <div class="callout callout-warn">Synaptic watches its own source directory if you add it to <code>watchPaths</code>. This will generate memories about Synaptic's own code, which can pollute query results. Use a separate project directory for the best experience.</div>
+    </div>
+
+    <!-- Models -->
+    <div class="doc-section" id="models">
+      <h2>Models</h2>
+      <p>Synaptic uses two tiers — a fast local model for ambient processing, and optionally a cloud model for reasoning.</p>
+      <table>
+        <thead><tr><th>Field</th><th>Default</th><th>Role</th></tr></thead>
+        <tbody>
+          <tr><td>ollamaModel</td><td>gemma4:e4b</td><td>Event compression — runs every 3 seconds</td></tr>
+          <tr><td>visionModel</td><td>gemma4:e4b</td><td>Terminal screenshot reading on errors</td></tr>
+          <tr><td>ollamaReasoningModel</td><td>gemma4:e4b</td><td>Queries, Socratic engine, stuck detection</td></tr>
+          <tr><td>embeddingModel</td><td>nomic-embed-text</td><td>Semantic search vectors</td></tr>
+          <tr><td>reasoningModelApiKey</td><td>""</td><td>Optional Google AI Studio key — switches reasoning to Gemini Flash</td></tr>
+        </tbody>
+      </table>
+      <h3>Cloud reasoning (optional)</h3>
+      <p>If your machine struggles with local reasoning speed, set a <a href="https://aistudio.google.com" target="_blank">Google AI Studio</a> API key in Settings → <strong>Reasoning Model → Cloud</strong>. Gemma 4 always stays local for compression and vision.</p>
+    </div>
+
+    <!-- Language pair -->
+    <div class="doc-section" id="language-pair">
+      <h2>Language pair</h2>
+      <p>Set <code>fromLang</code> and <code>toLang</code> to enable habit mismatch detection and the Mentor Bridge. Any language pair works — Python → Go, Java → Kotlin, JavaScript → Rust.</p>
+      <p>Change your language pair any time in Settings → <strong>Language Pair</strong>. The Bridge and Translate mode update immediately.</p>
+      <div class="callout callout-tip">Leave both fields empty to use Synaptic as a general memory tool without language-specific features.</div>
+    </div>
+
+    <!-- Socratic gate -->
+    <div class="doc-section" id="socratic-gate">
+      <h2>Socratic gate</h2>
+      <p class="lead">The centrepiece feature. Before you write code, you explain yourself. Gemma 4 decides whether your explanation holds up.</p>
+
+      <p>When you save a recognized code file (<code>.rs</code>, <code>.ts</code>, <code>.py</code>, <code>.go</code>, etc.), Synaptic reads your recent activity and generates a targeted question about the file. The question streams word-by-word into the HUD within 1.5 seconds.</p>
+
+      <h3>How evaluation works</h3>
+      <p>Gemma 4 evaluates your answer against three criteria:</p>
+      <ul style="color:var(--ink-2); padding-left:20px; margin-bottom:16px; font-size:14px; line-height:2.2;">
+        <li>Did you name a <strong>specific approach</strong>?</li>
+        <li>Did you describe <strong>at least one design decision</strong>?</li>
+        <li>Did you mention a <strong>potential failure mode or edge case</strong>?</li>
+      </ul>
+      <p>Vague answers get a sharper follow-up. The maximum is 3 follow-up questions before the session auto-closes.</p>
+
+      <h3>Strictness modes</h3>
+      <table>
+        <thead><tr><th>Mode</th><th>Behaviour</th><th>Best for</th></tr></thead>
+        <tbody>
+          <tr><td>followup</td><td>Question appears in HUD. Answer or skip — non-blocking.</td><td>Daily learning, regular use</td></tr>
+          <tr><td>gate</td><td>HUD persists until Gemma accepts your explanation. Cannot skip.</td><td>Structured study, interview prep</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Cooldown</h3>
+      <p>After a session closes (passed or skipped), the same file won't trigger a new gate for <strong>30 minutes</strong>. This prevents the gate from firing on every incremental save.</p>
+
+      <h3>Enable</h3>
+      <pre><span class="cm"># In synaptic.config.json</span>
+<span class="kw">"socraticMode"</span>: <span class="nu">true</span>,
+<span class="kw">"socraticStrictness"</span>: <span class="st">"followup"</span></pre>
+      <p>Or toggle in Settings → <strong>Socratic Gate</strong>.</p>
+    </div>
+
+    <!-- Query modes -->
+    <div class="doc-section" id="query-modes">
+      <h2>Query modes</h2>
+      <p>The dashboard's Query tab offers four modes. All stream tokens as they arrive — you see the first word within seconds.</p>
+      <div class="mode-grid">
+        <div class="mode-card">
+          <div class="mode-label">Translate</div>
+          <div class="mode-title">How do I do X in [language]?</div>
+          <div class="mode-desc">Finds your own past code doing the equivalent pattern and maps it across to the target language. Grounded in your history, not generic docs.</div>
+          <div class="mode-endpoint">POST /api/translate</div>
+        </div>
+        <div class="mode-card">
+          <div class="mode-label">Explain</div>
+          <div class="mode-title">What is [concept]?</div>
+          <div class="mode-desc">Explains a concept using examples from your own coding history as anchors. Structured: WHAT IT IS → HOW IT WORKS → WHY IT MATTERS → EXAMPLE.</div>
+          <div class="mode-endpoint">POST /api/explain</div>
+        </div>
+        <div class="mode-card">
+          <div class="mode-label">Map Concept</div>
+          <div class="mode-title">Map [concept] to what I know</div>
+          <div class="mode-desc">Maps a new concept to things you already understand, using your recent activity as the anchor points. Click any concept in the Concepts tab to trigger this instantly.</div>
+          <div class="mode-endpoint">POST /api/map-concept</div>
+        </div>
+        <div class="mode-card">
+          <div class="mode-label">Find Solution</div>
+          <div class="mode-title">Have I solved this before?</div>
+          <div class="mode-desc">Semantic search over your full history. Finds past errors, resolutions, and patterns relevant to your current question. Answers start from your solutions, not the internet's.</div>
+          <div class="mode-endpoint">POST /api/query</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Memory pipeline -->
+    <div class="doc-section" id="memory-pipeline">
+      <h2>Memory pipeline</h2>
+      <p>Events from your development environment flow through a pipeline every 3 seconds:</p>
+      <pre><span class="cm">File save / terminal command / error</span>
+           ↓
+<span class="kw">Observer</span>  (chokidar + shell history polling)
+           ↓
+<span class="kw">Compressor</span>  gemma4:e4b → JSON
+  summary, concepts[], significance, error_verbatim, resolution
+           ↓
+<span class="kw">isConceptEvolution</span>  gate — drops noise, keeps signal
+           ↓
+<span class="kw">Embedder</span>  nomic-embed-text → vector
+           ↓
+<span class="kw">SQLite</span>  local database — events + connections tables</pre>
+
+      <h3>Significance scoring</h3>
+      <table>
+        <thead><tr><th>Score</th><th>Meaning</th><th>Retention</th></tr></thead>
+        <tbody>
+          <tr><td>0.9+</td><td>New error root cause, concept breakthrough, approach change</td><td>365 days</td></tr>
+          <tr><td>0.7–0.89</td><td>Error resolution, new API or pattern, significant refactor</td><td>365 days</td></tr>
+          <tr><td>0.4–0.69</td><td>Continued work on an established pattern</td><td>30 days</td></tr>
+          <tr><td>&lt;0.4</td><td>Routine edit with no conceptual shift</td><td>7 days</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Habit detection -->
+    <div class="doc-section" id="habit-detection">
+      <h2>Habit mismatch detection</h2>
+      <p>Runs every 15 seconds in the background. Analyses recent activity in your <code>toLang</code> files and checks whether you're applying patterns from your <code>fromLang</code> that won't work.</p>
+      <p>When a mismatch is detected, a warning banner appears in the dashboard and the HUD auto-shows. Examples caught:</p>
+      <ul style="color:var(--ink-2); padding-left:20px; margin-bottom:16px; font-size:14px; line-height:2.2;">
+        <li>Using <code>try/catch</code> syntax in Rust (should be <code>Result&lt;T,E&gt;</code>)</li>
+        <li>Checking for <code>null</code> in Go (should be nil checks)</li>
+        <li>Using <code>var</code> in TypeScript (should be <code>let</code> or <code>const</code>)</li>
+        <li>Async patterns that differ between languages</li>
+      </ul>
+      <div class="callout callout-note">Habit detection requires both <code>fromLang</code> and <code>toLang</code> to be set in config.</div>
+    </div>
+
+    <!-- Stuck detection -->
+    <div class="doc-section" id="stuck-detection">
+      <h2>Stuck detection</h2>
+      <p>Synaptic monitors a rolling 5-minute window. If two or more of these signals appear together, it fires a stuck alert and auto-shows the HUD:</p>
+      <table>
+        <thead><tr><th>Signal</th><th>Threshold</th></tr></thead>
+        <tbody>
+          <tr><td>Terminal errors</td><td>3 or more</td></tr>
+          <tr><td>Same command repeated</td><td>3 or more times</td></tr>
+          <tr><td>App switches</td><td>6 or more</td></tr>
+          <tr><td>Same file saved repeatedly</td><td>5 or more times (thrashing)</td></tr>
+        </tbody>
+      </table>
+      <p>The HUD appears with a "Get Help" button that pre-fills the query with the detected signals and submits to Find Solution mode.</p>
+    </div>
+
+    <!-- Vision pipeline -->
+    <div class="doc-section" id="vision-pipeline">
+      <h2>Vision pipeline</h2>
+      <p>On macOS, when Synaptic detects a terminal error, it captures a screenshot of your screen before compression. Gemma 4's multimodal capability reads the actual stack trace — including content that might be truncated in shell history.</p>
+      <p>This produces higher-quality memories for errors: exact line numbers, complete error messages, and the full context visible on screen at the moment the error occurred.</p>
+      <div class="callout callout-note">Requires macOS with Accessibility permissions granted to the Synaptic Electron app. Linux and Windows use text-only compression for terminal errors.</div>
+    </div>
+
+    <!-- Dashboard -->
+    <div class="doc-section" id="dashboard">
+      <h2>Dashboard</h2>
+      <p>Open at <code>http://localhost:3777</code> while the server is running.</p>
+      <table>
+        <thead><tr><th>Tab</th><th>What it shows</th></tr></thead>
+        <tbody>
+          <tr><td>Query</td><td>Four query modes with streaming responses. Cmd+K to focus input, Cmd+Enter to send.</td></tr>
+          <tr><td>Activity</td><td>Real-time feed of compressed events. Filter by type (Code, Errors, Shell) or project folder.</td></tr>
+          <tr><td>Concepts</td><td>All concepts extracted from your history, weighted by frequency. Click any concept to map it.</td></tr>
+          <tr><td>Projects</td><td>Per-project stats: event count, error rate, last active, top concepts.</td></tr>
+          <tr><td>Bridge</td><td>Paste an error message. Gemma explains it using your coding history as the mental anchor.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- HUD -->
+    <div class="doc-section" id="hud">
+      <h2>HUD overlay</h2>
+      <p>An always-on-top Electron window that lives in the bottom-right corner of your screen.</p>
+      <table>
+        <thead><tr><th>Shortcut</th><th>Action</th></tr></thead>
+        <tbody>
+          <tr><td>Cmd+Shift+S</td><td>Toggle HUD visibility</td></tr>
+          <tr><td>Cmd+Shift+V</td><td>Push-to-talk voice input</td></tr>
+          <tr><td>Enter</td><td>Send query (Ask tab)</td></tr>
+          <tr><td>Shift+Enter</td><td>New line in query input</td></tr>
+          <tr><td>Cmd+Enter</td><td>Submit Socratic answer</td></tr>
+        </tbody>
+      </table>
+      <p>The HUD auto-shows (without you pressing a shortcut) when a Socratic gate fires, when stuck detection triggers, or when a habit mismatch is detected.</p>
+    </div>
+
+    <!-- Voice -->
+    <div class="doc-section" id="voice-input">
+      <h2>Voice input</h2>
+      <p>Press <code>Cmd+Shift+V</code> in the HUD to start recording. Release or click again to stop. The audio is transcribed locally via <a href="https://github.com/openai/whisper" target="_blank">whisper</a> and the result is sent as a query.</p>
+      <div class="callout callout-note">Voice input requires <code>whisper</code> and <code>ffmpeg</code> installed locally. Install with: <code>pip install openai-whisper</code> and <code>brew install ffmpeg</code>. Falls back gracefully if not available.</div>
+    </div>
+
+    <!-- API -->
+    <div class="doc-section" id="api">
+      <h2>API reference</h2>
+      <p>All endpoints are served at <code>http://localhost:3777</code>. Streaming endpoints return <code>text/event-stream</code> with <code>data: {"token":"..."}</code> events.</p>
+
+      <h3>Query endpoints</h3>
+      <table>
+        <thead><tr><th>Method + Path</th><th>Body</th><th>Response</th></tr></thead>
+        <tbody>
+          <tr><td>POST /api/query</td><td>{ question }</td><td>SSE stream — find solution</td></tr>
+          <tr><td>POST /api/explain</td><td>{ question }</td><td>SSE stream — concept explanation</td></tr>
+          <tr><td>POST /api/translate</td><td>{ question, fromLang?, toLang? }</td><td>SSE stream — language translation</td></tr>
+          <tr><td>POST /api/map-concept</td><td>{ concept }</td><td>SSE stream — concept mapping</td></tr>
+          <tr><td>POST /api/bridge</td><td>{ error, lang, concepts?, imageBase64? }</td><td>SSE stream — error explanation</td></tr>
+          <tr><td>POST /api/voice</td><td>{ audio (base64), mimeType }</td><td>{ transcript }</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Socratic endpoints</h3>
+      <table>
+        <thead><tr><th>Method + Path</th><th>Body</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td>POST /api/socratic/respond</td><td>{ sessionId, answer }</td><td>Submit explanation — result via WebSocket</td></tr>
+          <tr><td>POST /api/socratic/skip</td><td>{ sessionId }</td><td>Skip session. Returns 403 in gate mode.</td></tr>
+          <tr><td>GET /api/socratic/session/:id</td><td>—</td><td>Full session history including Q&A turns</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Data endpoints</h3>
+      <table>
+        <thead><tr><th>Method + Path</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td>GET /api/events/recent?hours=24</td><td>Recent compressed events</td></tr>
+          <tr><td>GET /api/events/significant?min=0.7</td><td>High-significance events</td></tr>
+          <tr><td>GET /api/events/project/:name</td><td>Events for a specific project</td></tr>
+          <tr><td>GET /api/events/concept/:concept</td><td>Events containing a concept</td></tr>
+          <tr><td>GET /api/events/:id/connections</td><td>Semantic connections for an event</td></tr>
+          <tr><td>GET /api/stats</td><td>Total events, connections, concepts, projects</td></tr>
+          <tr><td>GET /api/config</td><td>Current configuration (API key redacted)</td></tr>
+          <tr><td>POST /api/config</td><td>Patch config — saves to disk, broadcasts update</td></tr>
+          <tr><td>DELETE /api/events?olderThanDays=N</td><td>Clear old events</td></tr>
+        </tbody>
+      </table>
+
+      <h3>WebSocket events</h3>
+      <p>Connect to <code>ws://localhost:3777</code>. All messages are <code>{ type, data }</code>.</p>
+      <table>
+        <thead><tr><th>Type</th><th>Direction</th><th>Payload</th></tr></thead>
+        <tbody>
+          <tr><td>new_event</td><td>server → client</td><td>CompressedEvent</td></tr>
+          <tr><td>stuck_detected</td><td>server → client</td><td>{ file, duration, signals[] }</td></tr>
+          <tr><td>habit_mismatch</td><td>server → client</td><td>{ pattern, oldLang, newLang, warning }</td></tr>
+          <tr><td>socratic_question</td><td>server → client</td><td>{ sessionId, question, isFollowUp, strictness }</td></tr>
+          <tr><td>socratic_result</td><td>server → client</td><td>{ sessionId, passed, feedback, totalTurns }</td></tr>
+          <tr><td>config_changed</td><td>server → client</td><td>Full config object</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Troubleshooting -->
+    <div class="doc-section" id="troubleshooting">
+      <h2>Troubleshooting</h2>
+
+      <h3>No events in Activity tab</h3>
+      <p>Open the Activity tab — if it says "No activity recorded yet", check the diagnostic panel:</p>
+      <ul style="color:var(--ink-2); padding-left:20px; margin-bottom:16px; font-size:14px; line-height:2.2;">
+        <li><strong>Ollama not running</strong> — open Ollama.app or run <code>ollama serve</code></li>
+        <li><strong>Models not pulled</strong> — run <code>ollama pull gemma4:e4b</code></li>
+        <li><strong>No watch paths</strong> — add a directory in Settings → Watched Paths</li>
+      </ul>
+      <p>Click <strong>Fire test event</strong> in the diagnostic panel — if an event appears within 5 seconds, the pipeline is working.</p>
+
+      <h3>Electron closes immediately on launch</h3>
+      <p>A stale Electron process from a previous session is holding the single-instance lock. Run:</p>
+      <pre><span class="sh">pkill</span> -f "Electron"
+<span class="sh">npm run launch</span></pre>
+      <p><code>npm run launch</code> now does this automatically at startup — so this should only happen if you launch Electron directly.</p>
+
+      <h3>Socratic gate not firing</h3>
+      <p>Check that <code>socraticMode: true</code> is in your config. Then save any recognized code file (<code>.rs</code>, <code>.ts</code>, <code>.py</code>, etc.) — the gate fires on save, not on open. There's a 30-minute cooldown per file after a session completes.</p>
+
+      <h3>Queries return no response</h3>
+      <p>Check that Ollama is running and the model is pulled. Open <code>http://localhost:3777/api/debug</code> — the response shows <code>ollamaRunning</code> and <code>missingModels</code>. If a model is listed as missing, pull it with <code>ollama pull &lt;model-name&gt;</code>.</p>
+
+      <h3>Voice input not working</h3>
+      <p>Requires whisper and ffmpeg:</p>
+      <pre><span class="sh">pip install</span> openai-whisper
+<span class="sh">brew install</span> ffmpeg</pre>
+    </div>
+
+  </main>
+</div>
+
+<script>
+// Highlight active sidebar link on scroll
+const sections = document.querySelectorAll('.doc-section');
+const links = document.querySelectorAll('.sidebar-link');
+
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      links.forEach(l => l.classList.remove('active'));
+      const id = entry.target.id;
+      const link = document.querySelector(`.sidebar-link[href="#${id}"]`);
+      if (link) link.classList.add('active');
+    }
+  });
+}, { threshold: 0.3, rootMargin: '-56px 0px -60% 0px' });
+
+sections.forEach(s => observer.observe(s));
+</script>
+
+</body>
+</html>
