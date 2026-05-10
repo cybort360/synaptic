@@ -1,8 +1,10 @@
 # Synaptic
 
-> A local-first AI dev companion that remembers your coding journey, surfaces forgotten solutions, and warns you before your old habits break you in a new language.
+> A local-first AI dev companion powered by **Gemma 4** — remembers your coding journey, surfaces forgotten solutions, and warns you before your old habits break you in a new language.
 
 Synaptic watches your development activity silently and builds a model of how *you specifically* think and solve problems. When you're stuck or learning something new, it translates patterns using your own code history as examples — not generic documentation.
+
+Powered entirely by **[Gemma 4](https://deepmind.google/technologies/gemma/)** running locally via [Ollama](https://ollama.com). No API keys required. No data leaves your machine.
 
 **Everything runs on your machine. Nothing leaves without your permission.**
 
@@ -17,9 +19,9 @@ Every few seconds, Synaptic observes your environment:
 - Shell history for error pattern detection
 - (macOS) Which app is in focus and how often you switch
 
-Raw events are compressed by a local AI model into structured memories: a summary, extracted concepts, a significance score, and a verbatim error + resolution if one was detected. These memories are stored in a local SQLite database and indexed for semantic search.
+Raw events are compressed by **Gemma 4** (running locally via Ollama) into structured memories: a summary, extracted concepts, a significance score, and a verbatim error + resolution if one was detected. These memories are stored in a local SQLite database and indexed for semantic search using `nomic-embed-text` embeddings.
 
-When you ask a question, Synaptic retrieves the most relevant memories from your history, builds a context window, and reasons over it with a more capable model — answering with your own past solutions as the starting point, not generic knowledge.
+When you ask a question, Synaptic retrieves the most relevant memories from your history, builds a context window, and reasons over it with Gemma 4 — answering with your own past solutions as the starting point, not generic knowledge.
 
 ```
 Files / Terminal / Shell history
@@ -93,7 +95,8 @@ A small always-on-top overlay (`Cmd+Shift+S` to toggle) for quick queries withou
 ## Requirements
 
 - **Node.js 20+**
-- **[Ollama](https://ollama.com)** — local AI runtime (free)
+- **[Ollama](https://ollama.com)** — local AI runtime that runs Gemma 4 on your machine (free)
+- **[Gemma 4](https://deepmind.google/technologies/gemma/)** via Ollama — the model that powers everything: compression, vision, reasoning, and the Socratic engine
 - **[ffmpeg](https://ffmpeg.org)** + **[whisper](https://github.com/openai/whisper)** — optional, for voice input only
 
 ---
@@ -218,29 +221,25 @@ The Electron app automatically uses the compiled `dist/` if it exists, or falls 
 
 ---
 
-## Choosing your models
+## Powered by Gemma 4
 
-Synaptic uses three model tiers. Each is independent — you can swap any one without affecting the others.
+Synaptic is built around **[Gemma 4](https://deepmind.google/technologies/gemma/)** — Google DeepMind's open model family, running entirely on your machine via Ollama. There are no cloud dependencies by default. Gemma 4 handles every AI task in the pipeline:
 
-| Tier | Config field | Default | Role |
-|---|---|---|---|
-| Compression + Vision + Reasoning | `ollamaModel` / `visionModel` / `ollamaReasoningModel` | `gemma4:e4b` | One model for everything local — compression, vision, and reasoning. Fast enough for real-time use. |
-| Embeddings | `embeddingModel` | `nomic-embed-text` | Converts memories into vectors for semantic search. Better at embeddings than a generalist 4B model. |
+| Task | Model | When it runs |
+|---|---|---|
+| **Event compression** | `gemma4:e4b` | Every few seconds — turns raw file saves and terminal commands into structured memories |
+| **Vision analysis** | `gemma4:e4b` | On terminal errors (macOS) — reads your screen to extract the exact error text |
+| **Reasoning** | `gemma4:e4b` | On every query — translate, explain, map concept, stuck detection, socratic questions |
+| **Embeddings** | `nomic-embed-text` | After compression — converts memories to vectors for semantic search |
 
-**Cloud reasoning (optional):** If your machine struggles with 27B, set a Google AI Studio key and Synaptic routes the reasoning tier through Gemini 2.0 Flash instead. The 4B compression and vision models always stay local regardless.
+Gemma 4's multimodal capability is what makes the vision pipeline possible — when you hit an error, Synaptic captures a screenshot and Gemma reads the actual stack trace off your screen before compressing the event.
+
+**Cloud reasoning (optional):** You can swap the reasoning tier for Gemini 2.0 Flash via Google AI Studio for faster responses on slower machines. Gemma 4 always stays local for compression and vision regardless.
 
 ```bash
-export AI_API_KEY=your_google_ai_studio_key
-# or set "reasoningModelApiKey" in synaptic.config.json
+# Set in Settings → Reasoning Model → Cloud, or directly:
+# "reasoningModelApiKey": "your-google-ai-studio-key" in synaptic.config.json
 ```
-
-**Lower-spec alternatives:**
-
-| Machine | Compression | Reasoning |
-|---|---|---|
-| 8GB RAM | `gemma4:4b` | Use cloud (`reasoningModelApiKey`) |
-| 16GB RAM | `gemma4:4b` | `gemma4:27b` (default) |
-| 32GB+ RAM | `gemma4:4b` | `gemma4:27b` or larger |
 
 ---
 
