@@ -105,7 +105,7 @@ export class FileWatcher {
               fileLanguage,
               triggerType: type === "file_open" ? "file_open" : "file_save",
             });
-          }, 2000);
+          }, 500);
           this.socraticDebounceTimers.set(filePath, socraticTimer);
         }
       }
