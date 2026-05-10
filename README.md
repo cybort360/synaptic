@@ -14,6 +14,8 @@ Powered entirely by **[Gemma 4](https://deepmind.google/technologies/gemma/)** r
 
 ---
 
+**Live demo:** [https://synaptic-ebon.vercel.app](https://synaptic-ebon.vercel.app)
+
 ## How it works
 
 Every few seconds, Synaptic observes your environment:
