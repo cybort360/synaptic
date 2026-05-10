@@ -39,6 +39,43 @@ Files / Terminal / Shell history
 
 ---
 
+## Synaptic vs GitHub Copilot
+
+These are not competing tools — they solve different problems. Copilot writes code *for* you. Synaptic helps you *become* a better developer by understanding how you specifically think and where you get stuck.
+
+| | Synaptic | GitHub Copilot |
+|---|---|---|
+| **Memory** | Remembers your full coding history across every session | No memory — each session starts from zero |
+| **Context** | Your entire dev environment: files, terminal, errors, app switches | Only the file currently open in your editor |
+| **Privacy** | 100% local — code never leaves your machine | Code sent to Microsoft/GitHub servers for processing |
+| **Cost** | Free — runs on open-source Gemma 4 via Ollama | $10–$19/month subscription |
+| **Language learning** | Built for it — grounds explanations in your JS/Python/etc. knowledge | Gives generic suggestions regardless of your background |
+| **Habit detection** | Warns you when you apply patterns from your old language that break in your new one | No awareness of language habits or migration paths |
+| **Stuck detection** | Detects when you're spinning (repeated errors, thrashing, app switching) and proactively surfaces help | Passive — only responds when you invoke it |
+| **Error memory** | Tracks every error you hit and how you resolved it — surfaces the fix the next time | No error history |
+| **Learning mode** | Socratic gate — asks you to explain your intent before writing code, building real understanding | Writes code for you, which can create copy-paste dependency |
+| **Vendor lock-in** | Editor-agnostic, works with any workflow, any OS | Requires GitHub, works best in VS Code |
+| **Data ownership** | SQLite database on your machine, you own it entirely | Training and history handled by Microsoft |
+
+### The five things Copilot fundamentally cannot do
+
+**1. Remember yesterday.**
+Every time you open VS Code, Copilot starts from nothing. Synaptic accumulates knowledge about your patterns across weeks and months. When you hit an error you've seen before, Synaptic remembers exactly how you solved it last time — Copilot doesn't know it happened.
+
+**2. Know when you're stuck before you ask.**
+Copilot waits for you to invoke it. Synaptic watches for signals: three errors in five minutes, the same command run repeatedly, excessive file saves. It surfaces help before you lose the thread. You don't have to know you need help to get it.
+
+**3. Warn you that your habit is about to break.**
+If you're a JavaScript developer learning Rust and you reach for `try/catch`, Synaptic flags it. It knows your background and actively detects when you're applying a pattern from your old language that will fail in your new one. This is the mistake Copilot would happily autocomplete for you.
+
+**4. Ground answers in your code, not the internet's code.**
+When you ask Copilot "how do I handle errors in Rust?", it answers from its training data. When you ask Synaptic the same thing, it finds the three times you've handled errors in your own code, and explains the Rust equivalent using those specific examples. The answer feels like it came from a colleague who has been watching you work — because it did.
+
+**5. Keep your code private by design.**
+Copilot's value comes from training on billions of lines of code — and it processes your queries on Microsoft's servers. Synaptic runs Gemma 4 locally. Your code, your errors, your history: none of it leaves your machine. This is non-negotiable for developers working on proprietary systems or under NDA.
+
+---
+
 ## Features
 
 ### Ambient activity timeline
