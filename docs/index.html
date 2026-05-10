@@ -1,0 +1,751 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<title>Synaptic — The AI That Makes You Explain Yourself</title>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta name="description" content="A local-first AI dev companion powered by Gemma 4. Watches your code, remembers your history, and asks you to explain your intent before you write a line."/>
+<meta property="og:title" content="Synaptic"/>
+<meta property="og:description" content="The AI that makes you explain yourself before you code."/>
+<meta property="og:type" content="website"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg:      #080b0f;
+    --bg-2:    #0d1117;
+    --panel:   #111827;
+    --line:    #1f2937;
+    --line-2:  #374151;
+    --ink:     #f1f5f9;
+    --ink-2:   #94a3b8;
+    --ink-dim: #64748b;
+    --amber:   #f59e0b;
+    --amber-2: #fbbf24;
+    --green:   #10b981;
+    --red:     #ef4444;
+    --blue:    #3b82f6;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-size: 14px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+
+  /* ── Nav ── */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 5vw; height: 60px;
+    background: rgba(8,11,15,0.85);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--line);
+  }
+  .nav-logo { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 15px; color: var(--ink); text-decoration: none; }
+  .nav-logo-icon { color: var(--amber); font-size: 18px; }
+  .nav-links { display: flex; gap: 32px; }
+  .nav-links a { color: var(--ink-dim); text-decoration: none; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; transition: color .15s; }
+  .nav-links a:hover { color: var(--ink); }
+  .nav-cta {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: var(--amber); color: #0a0a0a; font-weight: 700;
+    font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase;
+    padding: 8px 18px; border-radius: 4px; text-decoration: none;
+    transition: background .15s;
+  }
+  .nav-cta:hover { background: var(--amber-2); }
+
+  /* ── Hero ── */
+  .hero {
+    min-height: 100vh;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center;
+    padding: 120px 5vw 80px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hero::before {
+    content: "";
+    position: absolute; inset: 0;
+    background:
+      radial-gradient(ellipse 60% 50% at 50% 0%, rgba(245,158,11,0.08) 0%, transparent 70%),
+      radial-gradient(ellipse 40% 30% at 20% 60%, rgba(59,130,246,0.04) 0%, transparent 60%);
+    pointer-events: none;
+  }
+
+  .hero-badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.25);
+    color: var(--amber); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase;
+    padding: 5px 14px; border-radius: 20px; margin-bottom: 32px;
+  }
+  .hero-badge span { width: 6px; height: 6px; border-radius: 50%; background: var(--amber); display: inline-block; animation: pulse-dot 2s ease-in-out infinite; }
+  @keyframes pulse-dot { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+  .hero h1 {
+    font-size: clamp(32px, 6vw, 72px);
+    font-weight: 700;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    margin-bottom: 24px;
+    max-width: 900px;
+  }
+  .hero h1 em { font-style: normal; color: var(--amber); }
+
+  .hero-sub {
+    font-size: clamp(14px, 2vw, 18px);
+    color: var(--ink-2);
+    max-width: 600px;
+    margin-bottom: 48px;
+    line-height: 1.7;
+    font-weight: 300;
+  }
+
+  .hero-actions { display: flex; gap: 16px; flex-wrap: wrap; justify-content: center; margin-bottom: 80px; }
+
+  .btn-primary {
+    display: inline-flex; align-items: center; gap: 10px;
+    background: var(--amber); color: #0a0a0a;
+    font-weight: 700; font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase;
+    padding: 14px 28px; border-radius: 5px; text-decoration: none;
+    transition: background .15s, transform .1s;
+  }
+  .btn-primary:hover { background: var(--amber-2); transform: translateY(-1px); }
+
+  .btn-ghost {
+    display: inline-flex; align-items: center; gap: 10px;
+    background: transparent; color: var(--ink-2);
+    border: 1px solid var(--line-2);
+    font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase;
+    padding: 14px 28px; border-radius: 5px; text-decoration: none;
+    transition: border-color .15s, color .15s;
+  }
+  .btn-ghost:hover { border-color: var(--ink-dim); color: var(--ink); }
+
+  /* ── Terminal demo ── */
+  .terminal-wrap {
+    width: 100%; max-width: 760px;
+    border: 1px solid var(--line-2);
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 32px 80px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.04);
+  }
+  .terminal-bar {
+    background: var(--panel); padding: 12px 16px;
+    display: flex; align-items: center; gap: 8px;
+    border-bottom: 1px solid var(--line);
+  }
+  .t-dot { width: 12px; height: 12px; border-radius: 50%; }
+  .t-red { background: #ef4444; }
+  .t-yellow { background: var(--amber); }
+  .t-green { background: var(--green); }
+  .t-title { flex: 1; text-align: center; font-size: 11px; color: var(--ink-dim); letter-spacing: 0.06em; }
+  .terminal-body { background: var(--bg-2); padding: 24px; font-size: 13px; line-height: 1.8; }
+  .t-comment { color: var(--ink-dim); }
+  .t-prompt { color: var(--green); }
+  .t-cmd { color: var(--ink); }
+  .t-amber { color: var(--amber); font-weight: 600; }
+  .t-blue { color: #60a5fa; }
+  .t-dim { color: var(--ink-dim); }
+
+  /* ── Section ── */
+  section { padding: 100px 5vw; }
+  .section-label { font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--amber); margin-bottom: 16px; }
+  .section-title { font-size: clamp(24px, 4vw, 42px); font-weight: 700; line-height: 1.15; letter-spacing: -0.02em; margin-bottom: 20px; }
+  .section-sub { font-size: 15px; color: var(--ink-2); max-width: 560px; line-height: 1.7; font-weight: 300; }
+  .container { max-width: 1100px; margin: 0 auto; }
+
+  /* ── Socratic demo ── */
+  .socratic-demo {
+    background: var(--bg);
+    border: 1px solid rgba(245,158,11,0.25);
+    border-top: 2px solid var(--amber);
+    border-radius: 10px;
+    overflow: hidden;
+    max-width: 420px;
+    box-shadow: 0 24px 60px rgba(0,0,0,0.4);
+  }
+  .sd-header { padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; }
+  .sd-label { font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--amber); font-weight: 600; }
+  .sd-file { font-size: 10px; color: var(--ink-dim); }
+  .sd-question {
+    margin: 0 16px 14px;
+    background: rgba(245,158,11,0.06);
+    border-left: 3px solid var(--amber);
+    border-radius: 0 6px 6px 0;
+    padding: 12px 14px;
+    font-size: 13px; color: var(--ink); line-height: 1.6;
+  }
+  .sd-input {
+    margin: 0 16px 12px;
+    background: var(--panel); border: 1px solid var(--line-2);
+    border-radius: 6px; padding: 10px 12px;
+    font-size: 12px; color: var(--ink-dim); line-height: 1.5;
+    min-height: 60px;
+  }
+  .sd-actions { padding: 0 16px 16px; display: flex; gap: 8px; align-items: center; }
+  .sd-submit { background: var(--amber); color: #0a0a0a; border: none; padding: 8px 18px; border-radius: 4px; font-weight: 700; font-size: 12px; cursor: pointer; }
+  .sd-skip { background: transparent; color: var(--ink-dim); border: 1px solid var(--line); padding: 8px 14px; border-radius: 4px; font-size: 12px; cursor: pointer; }
+  .sd-verdict { margin: 0 16px 16px; font-size: 11px; color: var(--green); text-align: right; }
+
+  /* ── Two-col layout ── */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: center; }
+  .two-col.reverse { direction: rtl; }
+  .two-col.reverse > * { direction: ltr; }
+  @media (max-width: 768px) { .two-col { grid-template-columns: 1fr; gap: 48px; } .two-col.reverse { direction: ltr; } }
+
+  /* ── Pipeline ── */
+  .pipeline {
+    background: var(--bg-2);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 28px;
+    font-size: 12px;
+    line-height: 2;
+  }
+  .pipe-row { display: flex; align-items: center; gap: 12px; }
+  .pipe-arrow { color: var(--line-2); font-size: 18px; padding-left: 20px; }
+  .pipe-label { color: var(--ink); font-weight: 500; }
+  .pipe-model { color: var(--amber); font-size: 10px; letter-spacing: 0.08em; margin-left: auto; }
+  .pipe-note { color: var(--ink-dim); font-size: 10px; }
+
+  /* ── Comparison ── */
+  .compare-table { width: 100%; border-collapse: collapse; }
+  .compare-table th {
+    padding: 14px 20px; text-align: left;
+    font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink-dim);
+    border-bottom: 2px solid var(--line);
+  }
+  .compare-table th:first-child { color: var(--ink-dim); }
+  .compare-table th.col-sy { color: var(--amber); }
+  .compare-table td {
+    padding: 14px 20px; border-bottom: 1px solid var(--line);
+    font-size: 13px; vertical-align: top; line-height: 1.5;
+  }
+  .compare-table td:first-child { color: var(--ink-2); font-size: 12px; }
+  .compare-table td.sy { color: var(--green); }
+  .compare-table td.co { color: var(--ink-dim); }
+  .compare-table tr:hover td { background: rgba(255,255,255,0.015); }
+
+  /* ── Features grid ── */
+  .features-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; }
+  .feature-card {
+    background: var(--bg-2); border: 1px solid var(--line);
+    border-radius: 10px; padding: 28px;
+    transition: border-color .2s;
+  }
+  .feature-card:hover { border-color: var(--line-2); }
+  .feature-icon { font-size: 24px; margin-bottom: 14px; }
+  .feature-title { font-size: 14px; font-weight: 600; color: var(--ink); margin-bottom: 8px; }
+  .feature-desc { font-size: 12px; color: var(--ink-dim); line-height: 1.7; font-weight: 300; }
+
+  /* ── Install ── */
+  .install-box {
+    background: var(--bg-2); border: 1px solid var(--line);
+    border-radius: 10px; overflow: hidden;
+    max-width: 720px; margin: 0 auto;
+  }
+  .install-header { background: var(--panel); padding: 12px 20px; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center; }
+  .install-header span { font-size: 11px; color: var(--ink-dim); letter-spacing: 0.08em; }
+  .install-body { padding: 24px; }
+  .install-line { font-size: 13px; line-height: 2.2; }
+  .install-line .cmd { color: var(--green); }
+  .install-line .comment { color: var(--ink-dim); }
+
+  /* ── Video ── */
+  .video-wrap {
+    background: var(--bg-2); border: 1px solid var(--line);
+    border-radius: 12px; overflow: hidden;
+    aspect-ratio: 16/9; display: flex; align-items: center; justify-content: center;
+    position: relative;
+  }
+  .video-placeholder {
+    display: flex; flex-direction: column; align-items: center; gap: 16px;
+    color: var(--ink-dim); text-align: center;
+  }
+  .play-btn {
+    width: 72px; height: 72px; border-radius: 50%;
+    background: rgba(245,158,11,0.15); border: 2px solid rgba(245,158,11,0.4);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--amber); font-size: 28px; cursor: pointer;
+    transition: background .15s, border-color .15s;
+  }
+  .play-btn:hover { background: rgba(245,158,11,0.25); border-color: var(--amber); }
+
+  /* ── Gemma section ── */
+  .gemma-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1px; background: var(--line); border-radius: 10px; overflow: hidden; border: 1px solid var(--line); }
+  .gemma-card { background: var(--bg-2); padding: 28px; }
+  .gemma-card-num { font-size: 10px; color: var(--amber); letter-spacing: 0.2em; margin-bottom: 12px; font-weight: 600; }
+  .gemma-card-title { font-size: 14px; font-weight: 600; margin-bottom: 8px; color: var(--ink); }
+  .gemma-card-body { font-size: 12px; color: var(--ink-dim); line-height: 1.7; font-weight: 300; }
+  .gemma-card-model { display: inline-block; margin-top: 12px; font-size: 10px; color: var(--amber); background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.2); padding: 3px 10px; border-radius: 20px; }
+
+  /* ── CTA section ── */
+  .cta-section {
+    text-align: center; padding: 120px 5vw;
+    background: radial-gradient(ellipse 60% 60% at 50% 50%, rgba(245,158,11,0.06) 0%, transparent 70%);
+  }
+  .cta-section h2 { font-size: clamp(28px, 5vw, 52px); font-weight: 700; letter-spacing: -0.02em; margin-bottom: 16px; }
+  .cta-section p { color: var(--ink-2); font-size: 15px; margin-bottom: 40px; font-weight: 300; }
+
+  /* ── Footer ── */
+  footer {
+    border-top: 1px solid var(--line); padding: 32px 5vw;
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 11px; color: var(--ink-dim); flex-wrap: wrap; gap: 12px;
+  }
+  footer a { color: var(--ink-dim); text-decoration: none; }
+  footer a:hover { color: var(--amber); }
+
+  /* ── Divider ── */
+  .divider { border: none; border-top: 1px solid var(--line); margin: 0; }
+
+  /* ── Responsive ── */
+  @media (max-width: 640px) {
+    nav .nav-links { display: none; }
+    .hero { padding-top: 100px; }
+  }
+
+  /* ── Animations ── */
+  .fade-up { opacity: 0; transform: translateY(24px); transition: opacity .6s ease, transform .6s ease; }
+  .fade-up.visible { opacity: 1; transform: translateY(0); }
+
+  /* ── Inline code ── */
+  code { background: var(--panel); border: 1px solid var(--line); padding: 1px 6px; border-radius: 3px; font-size: 12px; color: var(--amber); font-family: inherit; }
+</style>
+</head>
+<body>
+
+<!-- ── Nav ── -->
+<nav>
+  <a href="#" class="nav-logo">
+    <span class="nav-logo-icon">⬡</span>
+    SYNAPTIC
+  </a>
+  <div class="nav-links">
+    <a href="#how-it-works">How it works</a>
+    <a href="#features">Features</a>
+    <a href="#vs-copilot">vs Copilot</a>
+    <a href="#install">Install</a>
+  </div>
+  <a href="https://github.com/cybort360/synaptic" class="nav-cta" target="_blank">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.44 9.8 8.2 11.38.6.11.82-.26.82-.58 0-.28-.01-1.03-.02-2.03-3.34.73-4.04-1.61-4.04-1.61-.55-1.39-1.34-1.76-1.34-1.76-1.09-.75.08-.73.08-.73 1.21.08 1.84 1.24 1.84 1.24 1.07 1.84 2.81 1.3 3.5 1 .11-.78.42-1.3.76-1.6-2.67-.3-5.47-1.33-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.12-.3-.54-1.52.12-3.17 0 0 1.01-.32 3.3 1.23a11.5 11.5 0 0 1 3-.4c1.02.005 2.04.14 3 .4 2.28-1.55 3.29-1.23 3.29-1.23.66 1.65.24 2.87.12 3.17.77.84 1.24 1.91 1.24 3.22 0 4.61-2.81 5.63-5.48 5.92.43.37.81 1.1.81 2.22 0 1.6-.01 2.9-.01 3.29 0 .32.21.7.82.58C20.57 21.8 24 17.3 24 12c0-6.63-5.37-12-12-12z"/></svg>
+    View on GitHub
+  </a>
+</nav>
+
+<!-- ── Hero ── -->
+<section class="hero">
+  <div class="hero-badge">
+    <span></span>
+    Powered by Gemma 4 · Runs locally · No cloud required
+  </div>
+
+  <h1>The AI that makes you<br/><em>explain yourself</em><br/>before you write a line of code.</h1>
+
+  <p class="hero-sub">
+    Most AI tools write code for you. Synaptic asks why first.
+    It watches your entire dev environment, builds a model of how you think,
+    and stops you before you make the same mistake again.
+  </p>
+
+  <div class="hero-actions">
+    <a href="#install" class="btn-primary">
+      Get started free
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+    </a>
+    <a href="https://github.com/cybort360/synaptic" class="btn-ghost" target="_blank">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.44 9.8 8.2 11.38.6.11.82-.26.82-.58 0-.28-.01-1.03-.02-2.03-3.34.73-4.04-1.61-4.04-1.61-.55-1.39-1.34-1.76-1.34-1.76-1.09-.75.08-.73.08-.73 1.21.08 1.84 1.24 1.84 1.24 1.07 1.84 2.81 1.3 3.5 1 .11-.78.42-1.3.76-1.6-2.67-.3-5.47-1.33-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.12-.3-.54-1.52.12-3.17 0 0 1.01-.32 3.3 1.23a11.5 11.5 0 0 1 3-.4c1.02.005 2.04.14 3 .4 2.28-1.55 3.29-1.23 3.29-1.23.66 1.65.24 2.87.12 3.17.77.84 1.24 1.91 1.24 3.22 0 4.61-2.81 5.63-5.48 5.92.43.37.81 1.1.81 2.22 0 1.6-.01 2.9-.01 3.29 0 .32.21.7.82.58C20.57 21.8 24 17.3 24 12c0-6.63-5.37-12-12-12z"/></svg>
+      View source
+    </a>
+  </div>
+
+  <!-- Terminal -->
+  <div class="terminal-wrap fade-up">
+    <div class="terminal-bar">
+      <div class="t-dot t-red"></div>
+      <div class="t-dot t-yellow"></div>
+      <div class="t-dot t-green"></div>
+      <div class="t-title">synaptic — local-first AI dev companion</div>
+    </div>
+    <div class="terminal-body">
+      <div class="t-comment"># One command. Server + HUD. Everything local.</div>
+      <div><span class="t-prompt">→</span> <span class="t-cmd">npm run launch</span></div>
+      <br/>
+      <div class="t-dim">╔═══════════════════════════════════╗</div>
+      <div class="t-dim">║  <span class="t-amber">SYNAPTIC  v1.0</span>                  ║</div>
+      <div class="t-dim">║  local-first AI dev companion     ║</div>
+      <div class="t-dim">╚═══════════════════════════════════╝</div>
+      <br/>
+      <div class="t-dim">[Observer] Watching 2 paths</div>
+      <div class="t-dim">[Archivist] Ready to compress events</div>
+      <div class="t-dim">[Reasoner] Streaming with: <span class="t-amber">gemma4:e4b</span></div>
+      <div class="t-dim">[Socratic] Session started for <span class="t-blue">ownership.rs</span></div>
+      <br/>
+      <div class="t-amber">⬡  HUD active — Cmd+Shift+S to toggle</div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider"/>
+
+<!-- ── The Gate ── -->
+<section id="how-it-works">
+  <div class="container">
+    <div class="two-col">
+      <div class="fade-up">
+        <div class="section-label">The Socratic Gate</div>
+        <h2 class="section-title">Before you write.<br/>You explain.</h2>
+        <p class="section-sub">
+          When you open a code file, Synaptic reads your last few hours of activity,
+          identifies what's most at stake in that file, and asks you one targeted question.
+          Not a generic prompt. A question built from your actual history.
+        </p>
+        <br/>
+        <p class="section-sub">
+          If your answer is vague, it asks a follow-up. If it's solid, you're free to code —
+          and the session is logged. Over time, your explanations get sharper because
+          the bar doesn't lower.
+        </p>
+        <br/>
+        <p class="section-sub" style="color: var(--amber)">
+          This is only possible because Gemma 4 runs locally — fast enough to generate
+          a personalised question within 1.5 seconds of a file save.
+        </p>
+      </div>
+
+      <!-- Socratic HUD mockup -->
+      <div class="fade-up" style="display:flex; justify-content:center;">
+        <div class="socratic-demo">
+          <div class="sd-header">
+            <span class="sd-label">Before you code:</span>
+            <span class="sd-file">ownership.rs</span>
+          </div>
+          <div class="sd-question">
+            You've been writing JavaScript closures recently.
+            Before you edit this Rust file — how are you thinking
+            about values that need to be used in multiple places?
+          </div>
+          <div class="sd-input">
+            I'll pass references with &amp; to borrow values
+            instead of moving them, so the original owner
+            keeps ownership and the borrow checker is happy...
+          </div>
+          <div class="sd-actions">
+            <button class="sd-submit">Submit</button>
+            <button class="sd-skip">Skip</button>
+            <span style="flex:1; text-align:right; font-size:11px; color:var(--ink-dim)">Cmd+Enter to submit</span>
+          </div>
+          <div class="sd-verdict">✓ Solid — that's the right mental model.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider"/>
+
+<!-- ── Gemma 4 ── -->
+<section>
+  <div class="container">
+    <div class="section-label" style="text-align:center">Why Gemma 4</div>
+    <h2 class="section-title" style="text-align:center; max-width:600px; margin: 0 auto 16px;">Not just an AI model.<br/>The reason this product exists.</h2>
+    <p class="section-sub" style="text-align:center; margin: 0 auto 56px;">Every design decision in Synaptic is shaped by what <code>gemma4:e4b</code> makes possible.</p>
+
+    <div class="gemma-grid fade-up">
+      <div class="gemma-card">
+        <div class="gemma-card-num">01</div>
+        <div class="gemma-card-title">Speed that makes real-time possible</div>
+        <div class="gemma-card-body">
+          Synaptic compresses every file save and terminal command into a structured memory
+          on a 3-second batch cycle. A 27B model makes this backlog. At 4B, compression
+          completes before the next event arrives. The pipeline stays live.
+        </div>
+        <div class="gemma-card-model">gemma4:e4b · 3s cycle</div>
+      </div>
+      <div class="gemma-card">
+        <div class="gemma-card-num">02</div>
+        <div class="gemma-card-title">Vision that reads your errors</div>
+        <div class="gemma-card-body">
+          When you hit a terminal error, your shell history truncates it.
+          Synaptic captures a screenshot and Gemma 4 reads the actual stack trace
+          off your screen — full error text, line numbers, the exact constraint violated.
+          A non-multimodal model can't do this.
+        </div>
+        <div class="gemma-card-model">gemma4:e4b · multimodal</div>
+      </div>
+      <div class="gemma-card">
+        <div class="gemma-card-num">03</div>
+        <div class="gemma-card-title">Privacy that's architectural</div>
+        <div class="gemma-card-body">
+          Your code, your errors, your Socratic sessions — nothing touches a remote server.
+          Gemma 4 runs via Ollama. The SQLite database lives on your machine.
+          This isn't a privacy setting. It's the only way the product works.
+        </div>
+        <div class="gemma-card-model">local · no API key required</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider"/>
+
+<!-- ── Pipeline ── -->
+<section>
+  <div class="container">
+    <div class="two-col reverse">
+      <div class="fade-up">
+        <div class="section-label">The Pipeline</div>
+        <h2 class="section-title">Ambient intelligence.<br/>No prompting required.</h2>
+        <p class="section-sub">
+          Synaptic doesn't wait to be asked. It watches your environment continuously,
+          compresses events into searchable memories, and surfaces the right context
+          at the right moment — without you lifting a finger.
+        </p>
+        <br/>
+        <p class="section-sub">
+          When you ask a question, the answer is grounded in your history —
+          not the internet's code.
+        </p>
+      </div>
+
+      <div class="pipeline fade-up">
+        <div class="pipe-row"><span class="pipe-label">Files · Terminal · Shell</span></div>
+        <div class="pipe-row"><span class="pipe-arrow">↓</span><span class="pipe-note">Observer (chokidar + history polling)</span></div>
+        <div class="pipe-row"><span class="pipe-arrow">↓</span><span class="pipe-note">EventBus (decoupled, in-process)</span></div>
+        <div class="pipe-row" style="margin-top:4px">
+          <span class="pipe-arrow">↓</span>
+          <span class="pipe-label">Compressor</span>
+          <span class="pipe-model">gemma4:e4b · every 3s</span>
+        </div>
+        <div class="pipe-row">
+          <span class="pipe-arrow">↓</span>
+          <span class="pipe-label">Vision (on errors)</span>
+          <span class="pipe-model">gemma4:e4b · multimodal</span>
+        </div>
+        <div class="pipe-row">
+          <span class="pipe-arrow">↓</span>
+          <span class="pipe-label">Embedder</span>
+          <span class="pipe-model">nomic-embed-text</span>
+        </div>
+        <div class="pipe-row">
+          <span class="pipe-arrow">↓</span>
+          <span class="pipe-label">SQLite memory store</span>
+          <span class="pipe-model">local · yours</span>
+        </div>
+        <div class="pipe-row">
+          <span class="pipe-arrow">↓</span>
+          <span class="pipe-label">Reasoner + Socratic engine</span>
+          <span class="pipe-model">gemma4:e4b</span>
+        </div>
+        <div class="pipe-row"><span class="pipe-arrow">↓</span><span class="pipe-label">Dashboard · HUD Overlay</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider"/>
+
+<!-- ── Features ── -->
+<section id="features">
+  <div class="container">
+    <div class="section-label" style="text-align:center">Features</div>
+    <h2 class="section-title" style="text-align:center; margin-bottom: 56px;">Everything in the pipeline. Nothing in the cloud.</h2>
+
+    <div class="features-grid fade-up">
+      <div class="feature-card">
+        <div class="feature-icon">🧠</div>
+        <div class="feature-title">Persistent memory</div>
+        <div class="feature-desc">Every session, every error, every resolution — stored in a local SQLite database and indexed for semantic search. Synaptic remembers what you did three weeks ago and surfaces it when you need it.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">⟶</div>
+        <div class="feature-title">Socratic gate</div>
+        <div class="feature-desc">Before you edit a file, Synaptic asks you to explain your intent. Gemma 4 evaluates the answer and either lets you through or asks a sharper follow-up targeting exactly what you glossed over.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">👁</div>
+        <div class="feature-title">Vision error pipeline</div>
+        <div class="feature-desc">On terminal errors, Gemma 4 reads your actual screen via screenshot — not the truncated shell history. Full stack traces, line numbers, exact constraints. Stored verbatim in memory.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">⚡</div>
+        <div class="feature-title">Habit mismatch detection</div>
+        <div class="feature-desc">When you're learning a new language, Synaptic detects patterns from your old language appearing in new-language files and warns you before you run the code. Proactive — not reactive.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🔍</div>
+        <div class="feature-title">Four query modes</div>
+        <div class="feature-desc">Translate (JS patterns → Rust), Explain (grounded in your history), Map Concept (to things you already know), Find Solution (have I solved this before?). All streaming, all personal.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🔒</div>
+        <div class="feature-title">Fully local</div>
+        <div class="feature-desc">No API keys. No subscriptions. No telemetry. Gemma 4 runs via Ollama on your machine. Your code history never leaves. This isn't a setting — it's the architecture.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider"/>
+
+<!-- ── Demo video ── -->
+<section>
+  <div class="container" style="max-width: 860px;">
+    <div class="section-label" style="text-align:center">Demo</div>
+    <h2 class="section-title" style="text-align:center; margin-bottom: 40px;">See the Socratic gate fire</h2>
+    <div class="video-wrap fade-up">
+      <div class="video-placeholder">
+        <div class="play-btn">▶</div>
+        <div style="font-size:12px; letter-spacing:0.08em">Demo video coming soon</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider"/>
+
+<!-- ── vs Copilot ── -->
+<section id="vs-copilot">
+  <div class="container">
+    <div class="section-label" style="text-align:center">Synaptic vs Copilot</div>
+    <h2 class="section-title" style="text-align:center; margin-bottom: 12px;">Different tools. Different jobs.</h2>
+    <p class="section-sub" style="text-align:center; margin: 0 auto 48px;">Copilot writes code for you. Synaptic helps you become a better developer. They're not competing — but if you're learning a new language, there's no contest.</p>
+
+    <div class="fade-up" style="overflow-x:auto;">
+      <table class="compare-table">
+        <thead>
+          <tr>
+            <th></th>
+            <th class="col-sy">⬡ Synaptic</th>
+            <th>GitHub Copilot</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Memory</td>
+            <td class="sy">Remembers your full history across every session</td>
+            <td class="co">No memory — each session starts from zero</td>
+          </tr>
+          <tr>
+            <td>Context</td>
+            <td class="sy">Your entire environment: files, terminal, errors, app switches</td>
+            <td class="co">Only the currently open file</td>
+          </tr>
+          <tr>
+            <td>Privacy</td>
+            <td class="sy">100% local — code never leaves your machine</td>
+            <td class="co">Code sent to Microsoft/GitHub servers</td>
+          </tr>
+          <tr>
+            <td>Cost</td>
+            <td class="sy">Free — Gemma 4 runs locally via Ollama</td>
+            <td class="co">$10–$19/month</td>
+          </tr>
+          <tr>
+            <td>Language learning</td>
+            <td class="sy">Built for it — grounds explanations in your existing knowledge</td>
+            <td class="co">Generic suggestions regardless of background</td>
+          </tr>
+          <tr>
+            <td>Habit detection</td>
+            <td class="sy">Warns when JS/Python patterns appear in Rust/Go files</td>
+            <td class="co">Not aware of language migration patterns</td>
+          </tr>
+          <tr>
+            <td>Stuck detection</td>
+            <td class="sy">Detects spinning — surfaces help before you ask</td>
+            <td class="co">Passive — only responds when invoked</td>
+          </tr>
+          <tr>
+            <td>Learning approach</td>
+            <td class="sy">Socratic gate — asks you to explain before you code</td>
+            <td class="co">Autocompletes — can create copy-paste dependency</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<hr class="divider"/>
+
+<!-- ── Install ── -->
+<section id="install">
+  <div class="container">
+    <div class="section-label" style="text-align:center">Get Started</div>
+    <h2 class="section-title" style="text-align:center; margin-bottom: 12px;">Up and running in 5 minutes</h2>
+    <p class="section-sub" style="text-align:center; margin: 0 auto 48px;">You need Node.js 20+ and Ollama. That's it.</p>
+
+    <div class="install-box fade-up">
+      <div class="install-header">
+        <span>Terminal</span>
+        <span>bash</span>
+      </div>
+      <div class="install-body">
+        <div class="install-line"><span class="comment"># 1. Clone and install</span></div>
+        <div class="install-line"><span class="cmd">git clone https://github.com/cybort360/synaptic</span></div>
+        <div class="install-line"><span class="cmd">cd synaptic && npm install</span></div>
+        <br/>
+        <div class="install-line"><span class="comment"># 2. Pull the models (Ollama required)</span></div>
+        <div class="install-line"><span class="cmd">ollama pull gemma4:e4b</span></div>
+        <div class="install-line"><span class="cmd">ollama pull nomic-embed-text</span></div>
+        <br/>
+        <div class="install-line"><span class="comment"># 3. Configure</span></div>
+        <div class="install-line"><span class="cmd">cp synaptic.config.example.json synaptic.config.json</span></div>
+        <div class="install-line"><span class="comment"># Edit synaptic.config.json — add your watch paths</span></div>
+        <br/>
+        <div class="install-line"><span class="comment"># 4. Launch</span></div>
+        <div class="install-line"><span class="cmd" style="color:var(--amber)">npm run launch</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── CTA ── -->
+<section class="cta-section">
+  <h2>Stop copy-pasting code<br/>you don't understand.</h2>
+  <p>Synaptic is free, open-source, and runs entirely on your machine.<br/>One command to start.</p>
+  <div style="display:flex; gap:16px; justify-content:center; flex-wrap:wrap;">
+    <a href="https://github.com/cybort360/synaptic" class="btn-primary" target="_blank">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.44 9.8 8.2 11.38.6.11.82-.26.82-.58 0-.28-.01-1.03-.02-2.03-3.34.73-4.04-1.61-4.04-1.61-.55-1.39-1.34-1.76-1.34-1.76-1.09-.75.08-.73.08-.73 1.21.08 1.84 1.24 1.84 1.24 1.07 1.84 2.81 1.3 3.5 1 .11-.78.42-1.3.76-1.6-2.67-.3-5.47-1.33-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.12-.3-.54-1.52.12-3.17 0 0 1.01-.32 3.3 1.23a11.5 11.5 0 0 1 3-.4c1.02.005 2.04.14 3 .4 2.28-1.55 3.29-1.23 3.29-1.23.66 1.65.24 2.87.12 3.17.77.84 1.24 1.91 1.24 3.22 0 4.61-2.81 5.63-5.48 5.92.43.37.81 1.1.81 2.22 0 1.6-.01 2.9-.01 3.29 0 .32.21.7.82.58C20.57 21.8 24 17.3 24 12c0-6.63-5.37-12-12-12z"/></svg>
+      View on GitHub
+    </a>
+    <a href="#install" class="btn-ghost">Quick start ↑</a>
+  </div>
+</section>
+
+<!-- ── Footer ── -->
+<footer>
+  <div>⬡ <strong>Synaptic</strong> — local-first AI dev companion</div>
+  <div style="display:flex; gap:24px;">
+    <a href="https://github.com/cybort360/synaptic">GitHub</a>
+    <a href="https://github.com/cybort360/synaptic#readme">Docs</a>
+    <a href="https://ollama.com" target="_blank">Ollama</a>
+    <a href="https://deepmind.google/technologies/gemma/" target="_blank">Gemma 4</a>
+  </div>
+  <div>Built with <span style="color:var(--amber)">Gemma 4</span> · No cloud · No tracking</div>
+</footer>
+
+<script>
+// Fade-up animation on scroll
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+
+document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
+</script>
+
+</body>
+</html>
