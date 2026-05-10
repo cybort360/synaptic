@@ -42,28 +42,76 @@
     overflow-x: hidden;
   }
 
-  /* ── Nav ── */
+  /* ── Nav — terminal prompt style ── */
   nav {
     position: fixed; top: 0; left: 0; right: 0; z-index: 100;
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 0 5vw; height: 60px;
-    background: rgba(8,11,15,0.85);
-    backdrop-filter: blur(12px);
-    border-bottom: 1px solid var(--line);
+    display: flex; align-items: center;
+    padding: 0 28px; height: 48px; gap: 0;
+    background: rgba(8,11,15,0.97);
+    border-bottom: 1px solid rgba(245,158,11,0.18);
+    font-size: 13px;
+    overflow: hidden;
   }
-  .nav-logo { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 15px; color: var(--ink); text-decoration: none; }
-  .nav-logo-icon { color: var(--amber); font-size: 18px; }
-  .nav-links { display: flex; gap: 32px; }
-  .nav-links a { color: var(--ink-dim); text-decoration: none; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; transition: color .15s; }
-  .nav-links a:hover { color: var(--ink); }
-  .nav-cta {
-    display: inline-flex; align-items: center; gap: 8px;
-    background: var(--amber); color: #0a0a0a; font-weight: 700;
-    font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase;
-    padding: 8px 18px; border-radius: 4px; text-decoration: none;
-    transition: background .15s;
+
+  /* prompt segments */
+  .nav-user { color: var(--green); font-weight: 600; letter-spacing: 0; }
+  .nav-at   { color: var(--ink-dim); }
+  .nav-host { color: var(--green); font-weight: 600; }
+  .nav-colon { color: var(--ink-dim); margin: 0 1px; }
+  .nav-path { color: var(--blue); }
+  .nav-dollar { color: var(--ink-dim); margin: 0 10px 0 4px; }
+  .nav-cmd  { color: var(--ink); margin-right: 8px; }
+  .nav-flag { color: var(--amber); margin-right: 10px; }
+
+  /* bracketed arg links */
+  .nav-args { display: flex; align-items: center; gap: 2px; }
+  .nav-arg {
+    color: var(--ink-dim); text-decoration: none;
+    font-size: 12px; letter-spacing: 0;
+    padding: 2px 2px; transition: color .12s;
+    position: relative;
   }
-  .nav-cta:hover { background: var(--amber-2); }
+  .nav-arg::before { content: "["; color: var(--line-2); transition: color .12s; }
+  .nav-arg::after  { content: "]"; color: var(--line-2); transition: color .12s; }
+  .nav-arg:hover { color: var(--amber); }
+  .nav-arg:hover::before,
+  .nav-arg:hover::after { color: rgba(245,158,11,0.5); }
+
+  /* blinking cursor */
+  .nav-cursor {
+    color: var(--amber); margin-left: 6px; line-height: 1;
+    animation: blink 1s step-end infinite;
+    font-size: 15px;
+  }
+  @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0; } }
+
+  /* spacer pushes status to right */
+  .nav-spacer { flex: 1; }
+
+  /* model status */
+  .nav-status {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 11px; color: var(--ink-dim); margin-right: 20px;
+  }
+  .nav-status-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--amber);
+    animation: pulse-dot 2s ease-in-out infinite;
+  }
+  @keyframes pulse-dot { 0%,100% { opacity: 1; box-shadow: 0 0 0 0 rgba(245,158,11,0.4); } 50% { opacity: 0.7; box-shadow: 0 0 0 4px rgba(245,158,11,0); } }
+
+  /* github link */
+  .nav-github {
+    color: var(--ink-dim); text-decoration: none; font-size: 12px;
+    border: 1px solid var(--line-2); padding: 5px 12px; border-radius: 3px;
+    transition: color .12s, border-color .12s;
+    white-space: nowrap;
+  }
+  .nav-github:hover { color: var(--amber); border-color: rgba(245,158,11,0.4); }
+
+  @media (max-width: 800px) {
+    .nav-args, .nav-flag, .nav-cmd, .nav-cursor, .nav-status { display: none; }
+  }
 
   /* ── Hero ── */
   .hero {
@@ -327,23 +375,25 @@
 </head>
 <body>
 
-<!-- ── Nav ── -->
+<!-- ── Nav — terminal prompt ── -->
 <nav>
-  <a href="#" class="nav-logo">
-    <span class="nav-logo-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><polygon points="12 2 22 7 22 17 12 22 2 17 2 7"/></svg></span>
-    SYNAPTIC
-  </a>
-  <div class="nav-links">
-    <a href="#how-it-works">How it works</a>
-    <a href="#features">Features</a>
-    <a href="#vs-copilot">vs Copilot</a>
-    <a href="#install">Install</a>
-    <a href="docs.html">Docs</a>
+  <span class="nav-user">synaptic</span><span class="nav-at">@</span><span class="nav-host">local</span><span class="nav-colon">:</span><span class="nav-path">~</span><span class="nav-dollar">$</span>
+  <span class="nav-cmd">./synaptic</span>
+  <span class="nav-flag">--explore</span>
+  <div class="nav-args">
+    <a href="#how-it-works" class="nav-arg">how-it-works</a>
+    <a href="#features" class="nav-arg">features</a>
+    <a href="#vs-copilot" class="nav-arg">vs-copilot</a>
+    <a href="#install" class="nav-arg">install</a>
+    <a href="docs.html" class="nav-arg">docs</a>
   </div>
-  <a href="https://github.com/cybort360/synaptic" class="nav-cta" target="_blank">
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.44 9.8 8.2 11.38.6.11.82-.26.82-.58 0-.28-.01-1.03-.02-2.03-3.34.73-4.04-1.61-4.04-1.61-.55-1.39-1.34-1.76-1.34-1.76-1.09-.75.08-.73.08-.73 1.21.08 1.84 1.24 1.84 1.24 1.07 1.84 2.81 1.3 3.5 1 .11-.78.42-1.3.76-1.6-2.67-.3-5.47-1.33-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.12-.3-.54-1.52.12-3.17 0 0 1.01-.32 3.3 1.23a11.5 11.5 0 0 1 3-.4c1.02.005 2.04.14 3 .4 2.28-1.55 3.29-1.23 3.29-1.23.66 1.65.24 2.87.12 3.17.77.84 1.24 1.91 1.24 3.22 0 4.61-2.81 5.63-5.48 5.92.43.37.81 1.1.81 2.22 0 1.6-.01 2.9-.01 3.29 0 .32.21.7.82.58C20.57 21.8 24 17.3 24 12c0-6.63-5.37-12-12-12z"/></svg>
-    View on GitHub
-  </a>
+  <span class="nav-cursor">▌</span>
+  <div class="nav-spacer"></div>
+  <div class="nav-status">
+    <div class="nav-status-dot"></div>
+    gemma4:e4b
+  </div>
+  <a href="https://github.com/cybort360/synaptic" class="nav-github" target="_blank">[github ↗]</a>
 </nav>
 
 <!-- ── Hero ── -->
