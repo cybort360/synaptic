@@ -165,12 +165,48 @@
   .mode-title { font-size: 14px; font-weight: 600; color: var(--ink); margin-bottom: 6px; }
   .mode-desc { font-size: 12px; color: var(--ink-dim); line-height: 1.6; font-weight: 300; }
   .mode-endpoint { display: inline-block; margin-top: 10px; font-size: 10px; color: var(--ink-dim); background: var(--panel); border: 1px solid var(--line); padding: 2px 8px; border-radius: 3px; }
-  @media (max-width: 640px) { .mode-grid { grid-template-columns: 1fr; } }
+  /* ── Mobile nav strip ── */
+  .mobile-nav {
+    display: none; position: sticky; top: 56px; z-index: 90;
+    background: var(--bg-2); border-bottom: 1px solid var(--line);
+    overflow-x: auto; white-space: nowrap; padding: 0 16px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .mobile-nav::-webkit-scrollbar { display: none; }
+  .mobile-nav a {
+    display: inline-block; padding: 10px 14px;
+    font-size: 11px; color: var(--ink-dim); text-decoration: none;
+    letter-spacing: 0.06em; border-bottom: 2px solid transparent;
+    transition: color .12s, border-color .12s;
+  }
+  .mobile-nav a:hover, .mobile-nav a.active { color: var(--amber); border-bottom-color: var(--amber); }
 
-  /* ── Responsive ── */
+  /* ── Scrollable tables ── */
+  .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 4px; }
+  .table-scroll table { min-width: 520px; }
+
+  @media (max-width: 640px) {
+    .mode-grid { grid-template-columns: 1fr; }
+    h1 { font-size: 22px; }
+    h2 { font-size: 18px; }
+    pre { font-size: 12px; padding: 14px 16px; }
+    .lead { font-size: 14px; }
+  }
+
   @media (max-width: 900px) {
     .sidebar { display: none; }
-    .content { margin-left: 0; padding: 32px 24px 80px; }
+    .mobile-nav { display: block; }
+    .layout { padding-top: 0; }
+    .content { margin-left: 0; padding: 24px 20px 80px; max-width: 100%; }
+    .topbar { padding: 0 16px; gap: 14px; }
+    .topbar-title { display: none; }
+    h1 { font-size: 26px; }
+    h2 { font-size: 20px; }
+    .steps li { flex-direction: column; gap: 10px; }
+    .step-num { margin-top: 0; }
+    .doc-section + .doc-section { padding-top: 40px; }
+    .doc-section { margin-bottom: 48px; }
   }
 </style>
 </head>
@@ -188,6 +224,22 @@
     <a href="https://synaptic-ebon.vercel.app">Home</a>
     <a href="https://github.com/cybort360/synaptic" target="_blank">GitHub</a>
   </div>
+</div>
+
+
+<!-- Mobile section nav -->
+<div class="mobile-nav" id="mobileNav">
+  <a href="#overview">Overview</a>
+  <a href="#requirements">Requirements</a>
+  <a href="#installation">Install</a>
+  <a href="#config-file">Config</a>
+  <a href="#socratic-gate">Socratic Gate</a>
+  <a href="#query-modes">Query Modes</a>
+  <a href="#memory-pipeline">Memory</a>
+  <a href="#habit-detection">Habits</a>
+  <a href="#dashboard">Dashboard</a>
+  <a href="#api">API</a>
+  <a href="#troubleshooting">Troubleshoot</a>
 </div>
 
 <!-- ── Layout ── -->
@@ -253,7 +305,7 @@
     <!-- Requirements -->
     <div class="doc-section" id="requirements">
       <h2>Requirements</h2>
-      <table>
+      <div class="table-scroll"><table>
         <thead><tr><th>Requirement</th><th>Version</th><th>Notes</th></tr></thead>
         <tbody>
           <tr><td>Node.js</td><td>20+</td><td>Required for the server and Electron app</td></tr>
@@ -262,7 +314,7 @@
           <tr><td>nomic-embed-text</td><td>-</td><td>Embedding model for semantic search</td></tr>
           <tr><td>macOS</td><td>12+</td><td>Full support. Linux/Windows: file watching + terminal work; vision and HUD are macOS-only.</td></tr>
         </tbody>
-      </table>
+      </table></div>
       <div class="callout callout-tip">On macOS, Ollama installs as a menu bar app that starts automatically. If <code>ollama serve</code> fails, it's already running. Just pull the models.</div>
     </div>
 
@@ -371,7 +423,7 @@
     <div class="doc-section" id="models">
       <h2>Models</h2>
       <p>Synaptic uses two tiers: a fast local model for ambient processing, and optionally a cloud model for reasoning.</p>
-      <table>
+      <div class="table-scroll"><table>
         <thead><tr><th>Field</th><th>Default</th><th>Role</th></tr></thead>
         <tbody>
           <tr><td>ollamaModel</td><td>gemma4:e4b</td><td>Event compression, runs every 3 seconds</td></tr>
@@ -380,7 +432,7 @@
           <tr><td>embeddingModel</td><td>nomic-embed-text</td><td>Semantic search vectors</td></tr>
           <tr><td>reasoningModelApiKey</td><td>""</td><td>Optional Google AI Studio key that switches reasoning to Gemini Flash</td></tr>
         </tbody>
-      </table>
+      </table></div>
       <h3>Cloud reasoning (optional)</h3>
       <p>If your machine struggles with local reasoning speed, set a <a href="https://aistudio.google.com" target="_blank">Google AI Studio</a> API key in Settings → <strong>Reasoning Model → Cloud</strong>. Gemma 4 always stays local for compression and vision.</p>
     </div>
@@ -410,13 +462,13 @@
       <p>Vague answers get a sharper follow-up. The maximum is 3 follow-up questions before the session auto-closes.</p>
 
       <h3>Strictness modes</h3>
-      <table>
+      <div class="table-scroll"><table>
         <thead><tr><th>Mode</th><th>Behaviour</th><th>Best for</th></tr></thead>
         <tbody>
           <tr><td>followup</td><td>Question appears in HUD. Answer or skip. Non-blocking.</td><td>Daily learning, regular use</td></tr>
           <tr><td>gate</td><td>HUD persists until Gemma accepts your explanation. Cannot skip.</td><td>Structured study, interview prep</td></tr>
         </tbody>
-      </table>
+      </table></div>
 
       <h3>Cooldown</h3>
       <p>After a session closes (passed or skipped), the same file won't trigger a new gate for <strong>30 minutes</strong>. This prevents the gate from firing on every incremental save.</p>
@@ -478,7 +530,7 @@
 <span class="kw">SQLite</span>  local database: events + connections tables</pre>
 
       <h3>Significance scoring</h3>
-      <table>
+      <div class="table-scroll"><table>
         <thead><tr><th>Score</th><th>Meaning</th><th>Retention</th></tr></thead>
         <tbody>
           <tr><td>0.9+</td><td>New error root cause, concept breakthrough, approach change</td><td>365 days</td></tr>
@@ -486,7 +538,7 @@
           <tr><td>0.4–0.69</td><td>Continued work on an established pattern</td><td>30 days</td></tr>
           <tr><td>&lt;0.4</td><td>Routine edit with no conceptual shift</td><td>7 days</td></tr>
         </tbody>
-      </table>
+      </table></div>
     </div>
 
     <!-- Habit detection -->
@@ -507,7 +559,7 @@
     <div class="doc-section" id="stuck-detection">
       <h2>Stuck detection</h2>
       <p>Synaptic monitors a rolling 5-minute window. If two or more of these signals appear together, it fires a stuck alert and auto-shows the HUD:</p>
-      <table>
+      <div class="table-scroll"><table>
         <thead><tr><th>Signal</th><th>Threshold</th></tr></thead>
         <tbody>
           <tr><td>Terminal errors</td><td>3 or more</td></tr>
@@ -515,7 +567,7 @@
           <tr><td>App switches</td><td>6 or more</td></tr>
           <tr><td>Same file saved repeatedly</td><td>5 or more times (thrashing)</td></tr>
         </tbody>
-      </table>
+      </table></div>
       <p>The HUD appears with a "Get Help" button that pre-fills the query with the detected signals and submits to Find Solution mode.</p>
     </div>
 
@@ -531,7 +583,7 @@
     <div class="doc-section" id="dashboard">
       <h2>Dashboard</h2>
       <p>Open at <code>http://localhost:3777</code> while the server is running.</p>
-      <table>
+      <div class="table-scroll"><table>
         <thead><tr><th>Tab</th><th>What it shows</th></tr></thead>
         <tbody>
           <tr><td>Query</td><td>Four query modes with streaming responses. Cmd+K to focus input, Cmd+Enter to send.</td></tr>
@@ -540,14 +592,14 @@
           <tr><td>Projects</td><td>Per-project stats: event count, error rate, last active, top concepts.</td></tr>
           <tr><td>Bridge</td><td>Paste an error message. Gemma explains it using your coding history as the mental anchor.</td></tr>
         </tbody>
-      </table>
+      </table></div>
     </div>
 
     <!-- HUD -->
     <div class="doc-section" id="hud">
       <h2>HUD overlay</h2>
       <p>An always-on-top Electron window that lives in the bottom-right corner of your screen.</p>
-      <table>
+      <div class="table-scroll"><table>
         <thead><tr><th>Shortcut</th><th>Action</th></tr></thead>
         <tbody>
           <tr><td>Cmd+Shift+S</td><td>Toggle HUD visibility</td></tr>
@@ -556,7 +608,7 @@
           <tr><td>Shift+Enter</td><td>New line in query input</td></tr>
           <tr><td>Cmd+Enter</td><td>Submit Socratic answer</td></tr>
         </tbody>
-      </table>
+      </table></div>
       <p>The HUD auto-shows (without you pressing a shortcut) when a Socratic gate fires, when stuck detection triggers, or when a habit mismatch is detected.</p>
     </div>
 
@@ -573,7 +625,7 @@
       <p>All endpoints are served at <code>http://localhost:3777</code>. Streaming endpoints return <code>text/event-stream</code> with <code>data: {"token":"..."}</code> events.</p>
 
       <h3>Query endpoints</h3>
-      <table>
+      <div class="table-scroll"><table>
         <thead><tr><th>Method + Path</th><th>Body</th><th>Response</th></tr></thead>
         <tbody>
           <tr><td>POST /api/query</td><td>{ question }</td><td>SSE stream. Find solution.</td></tr>
@@ -583,20 +635,20 @@
           <tr><td>POST /api/bridge</td><td>{ error, lang, concepts?, imageBase64? }</td><td>SSE stream. Error explanation.</td></tr>
           <tr><td>POST /api/voice</td><td>{ audio (base64), mimeType }</td><td>{ transcript }</td></tr>
         </tbody>
-      </table>
+      </table></div>
 
       <h3>Socratic endpoints</h3>
-      <table>
+      <div class="table-scroll"><table>
         <thead><tr><th>Method + Path</th><th>Body</th><th>Notes</th></tr></thead>
         <tbody>
           <tr><td>POST /api/socratic/respond</td><td>{ sessionId, answer }</td><td>Submit explanation. Result arrives via WebSocket.</td></tr>
           <tr><td>POST /api/socratic/skip</td><td>{ sessionId }</td><td>Skip session. Returns 403 in gate mode.</td></tr>
           <tr><td>GET /api/socratic/session/:id</td><td>-</td><td>Full session history including Q&A turns</td></tr>
         </tbody>
-      </table>
+      </table></div>
 
       <h3>Data endpoints</h3>
-      <table>
+      <div class="table-scroll"><table>
         <thead><tr><th>Method + Path</th><th>Notes</th></tr></thead>
         <tbody>
           <tr><td>GET /api/events/recent?hours=24</td><td>Recent compressed events</td></tr>
@@ -609,11 +661,11 @@
           <tr><td>POST /api/config</td><td>Patch config. Saves to disk and broadcasts update.</td></tr>
           <tr><td>DELETE /api/events?olderThanDays=N</td><td>Clear old events</td></tr>
         </tbody>
-      </table>
+      </table></div>
 
       <h3>WebSocket events</h3>
       <p>Connect to <code>ws://localhost:3777</code>. All messages are <code>{ type, data }</code>.</p>
-      <table>
+      <div class="table-scroll"><table>
         <thead><tr><th>Type</th><th>Direction</th><th>Payload</th></tr></thead>
         <tbody>
           <tr><td>new_event</td><td>server → client</td><td>CompressedEvent</td></tr>
@@ -623,7 +675,7 @@
           <tr><td>socratic_result</td><td>server → client</td><td>{ sessionId, passed, feedback, totalTurns }</td></tr>
           <tr><td>config_changed</td><td>server → client</td><td>Full config object</td></tr>
         </tbody>
-      </table>
+      </table></div>
     </div>
 
     <!-- Troubleshooting -->

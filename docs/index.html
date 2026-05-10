@@ -116,6 +116,10 @@
 
   @media (max-width: 800px) {
     .nav-args, .nav-flag, .nav-cmd, .nav-cursor, .nav-status { display: none; }
+    .nav-path, .nav-colon, .nav-dollar, .nav-user, .nav-at, .nav-host { display: none; }
+    nav { justify-content: space-between; }
+    .nav-spacer { display: none; }
+    .nav-github { margin-left: auto; }
   }
 
   /* ── Hero ── */
@@ -367,7 +371,31 @@
   /* ── Responsive ── */
   @media (max-width: 640px) {
     nav .nav-links { display: none; }
-    .hero { padding-top: 100px; }
+    .hero { padding-top: 90px; padding-left: 20px; padding-right: 20px; }
+    .hero-actions { flex-direction: column; align-items: stretch; }
+    .btn-primary, .btn-ghost { justify-content: center; }
+    .terminal-wrap { border-radius: 6px; }
+    .terminal-body { padding: 16px; font-size: 12px; }
+    section { padding: 64px 20px; }
+    .socratic-demo { max-width: 100%; }
+    .gemma-grid { grid-template-columns: 1fr; }
+    .features-grid { grid-template-columns: 1fr; }
+    .install-body { padding: 16px; }
+    .install-line { font-size: 12px; }
+    .cta-section { padding: 80px 20px; }
+    footer { flex-direction: column; gap: 16px; text-align: center; }
+    footer div:nth-child(2) { flex-wrap: wrap; justify-content: center; }
+    .compare-table th, .compare-table td { padding: 10px 12px; font-size: 12px; }
+    .pipeline { padding: 20px; font-size: 11px; }
+  }
+
+  /* ── Scrollable comparison table on mobile ── */
+  .compare-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .compare-table { min-width: 560px; }
+
+  @media (max-width: 900px) {
+    .section-title { font-size: clamp(20px, 5vw, 36px); }
+    .two-col { gap: 48px; }
   }
 
   /* ── Animations ── */
@@ -679,7 +707,7 @@
     <h2 class="section-title" style="text-align:center; margin-bottom: 12px;">Different tools. Different jobs.</h2>
     <p class="section-sub" style="text-align:center; margin: 0 auto 48px;">Copilot writes code for you. Synaptic helps you become a better developer. They're not competing, but if you're learning a new language, there's no contest.</p>
 
-    <div class="fade-up" style="overflow-x:auto;">
+    <div class="compare-wrap fade-up">
       <table class="compare-table">
         <thead>
           <tr>
