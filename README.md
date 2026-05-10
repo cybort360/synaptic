@@ -1,12 +1,16 @@
 # Synaptic
 
-> A local-first AI dev companion powered by **Gemma 4** — remembers your coding journey, surfaces forgotten solutions, and warns you before your old habits break you in a new language.
+> The AI dev tool that makes you explain yourself before you write a line of code.
 
-Synaptic watches your development activity silently and builds a model of how *you specifically* think and solve problems. When you're stuck or learning something new, it translates patterns using your own code history as examples — not generic documentation.
+Most AI tools write code *for* you. Synaptic asks *why* first.
 
-Powered entirely by **[Gemma 4](https://deepmind.google/technologies/gemma/)** running locally via [Ollama](https://ollama.com). No API keys required. No data leaves your machine.
+Before you touch a file, Synaptic intercepts you and asks you to articulate your intent — grounded in your own coding history. If your explanation doesn't hold up, it asks a follow-up. When it does, you're free to code. The result: you stop copy-pasting patterns you don't understand and start building real knowledge that sticks.
 
-**Everything runs on your machine. Nothing leaves without your permission.**
+This is the **Socratic gate** — and it's the core of what Synaptic is.
+
+Beyond that, Synaptic watches your entire development environment silently and builds a model of how *you specifically* think and solve problems. When you're stuck or learning a new language, it surfaces your own past solutions — not generic documentation pulled from the internet.
+
+Powered entirely by **[Gemma 4](https://deepmind.google/technologies/gemma/)** running locally via [Ollama](https://ollama.com). No subscription. No cloud. No data leaves your machine.
 
 ---
 
@@ -78,6 +82,33 @@ Copilot's value comes from training on billions of lines of code — and it proc
 
 ## Features
 
+### ⟶ Socratic gate — the headline feature
+
+When you open a code file, Synaptic stops you before you type. It reads your last 24 hours of coding activity, identifies what concept or decision is most at stake in this specific file, and asks you one targeted question:
+
+> *"You've been using closures heavily in JavaScript. Before you open this Rust file — how are you planning to handle the fact that Rust doesn't have garbage collection?"*
+
+The question isn't generic. It's built from your actual history. Gemma 4 looks at what you've been building, what errors you've hit, and what concepts you've been wrestling with — and asks the one thing most likely to reveal whether you actually understand what you're about to do.
+
+**Two modes:**
+
+| Mode | Behaviour | Best for |
+|---|---|---|
+| **Follow-up** | Question appears in the HUD. Answer or skip — non-blocking. | Daily learning mode |
+| **Gate** | HUD persists until Gemma accepts your explanation. Cannot skip. | Structured study, interview prep, pair review |
+
+**Gemma 4 evaluates your answer.** If it's vague ("I'll figure it out as I go"), it asks a sharper follow-up targeting exactly what you glossed over. If it's solid, it lets you through and the session is logged. Over time, your explanations get better — because you've been forced to think before you type, every single day.
+
+Enable in Settings → **Socratic Gate**, or directly:
+```json
+"socraticMode": true,
+"socraticStrictness": "followup"
+```
+
+Voice input works in the Socratic panel — `Cmd+Shift+V` while the panel is focused.
+
+---
+
 ### Ambient activity timeline
 Real-time feed of everything Synaptic has captured and compressed. Filter by type: all, code changes, errors, shell activity. Each entry shows the timestamp, file, summary, and extracted concepts.
 
@@ -96,21 +127,6 @@ Paste an error message from any language. Synaptic explains it using your own co
 
 ### Habit mismatch detection
 Runs continuously in the background. When Synaptic detects a pattern from your history appearing in a new-language file where it won't work, it surfaces a warning. Proactive — doesn't wait for you to ask.
-
-### Socratic gate
-When `socraticMode` is enabled, Synaptic intercepts file opens for recognized code files and surfaces a targeted question before you start typing. The question is grounded in your own coding history — Gemma 27B reads your recent 24 hours of activity and asks you to articulate the specific approach you're about to take.
-
-Two modes:
-- **followup** (default) — Shows the question in the HUD. You can answer or skip. Non-blocking.
-- **gate** — The HUD panel persists until your explanation satisfies Gemma. Blocking. Designed for structured learning or pair-review sessions.
-
-Enable in config:
-```json
-"socraticMode": true,
-"socraticStrictness": "followup"
-```
-
-Voice input works in the Socratic panel — press `Cmd+Shift+V` while the panel is focused.
 
 ### Stuck detection
 Triggers automatically when two or more of these signals appear in a five-minute window:
