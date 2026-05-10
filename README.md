@@ -313,7 +313,7 @@ The `e4b` model (4B effective parameters) was a deliberate choice, not a default
 | A cloud-only model | The entire privacy guarantee breaks. Code, errors, and history leave your machine |
 | No local model at all | Socratic gate cannot fire on every file save. Latency makes it unusable as a real-time feature |
 
-The Socratic gate in particular depends on this: it fires within 1.5 seconds of a file save, generates a personalised question, and streams it word-by-word to the HUD. That loop only works because `gemma4:e4b` is fast enough to start generating before the developer has finished opening their editor.
+The Socratic gate in particular depends on this: it fires within a few seconds of a file save, generates a personalised question, and streams it word-by-word to the HUD. That loop only works because `gemma4:e4b` is fast enough to deliver the first token before the developer has typed their first line.
 
 ---
 
