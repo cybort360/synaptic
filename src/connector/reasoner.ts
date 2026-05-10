@@ -33,7 +33,7 @@ export class Reasoner {
         console.log(`[Reasoner] Streaming with: ${model}${imageBase64 ? " (vision)" : ""}`);
         yield* this.ollama.generateStream(model, prompt, {
           temperature: 0.3,
-          numPredict: 1024,
+          numPredict: 2048,
           ...(imageBase64 ? { images: [imageBase64] } : {}),
         });
         return;

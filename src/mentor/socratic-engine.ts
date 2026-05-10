@@ -13,9 +13,11 @@ import { eventBus } from "../shared/event-bus.js";
 import { buildSocraticPrompt, buildSocraticEvalPrompt } from "../connector/prompts.js";
 
 const MAX_TURNS = 3;
+const COOLDOWN_MS = 30 * 60 * 1000; // 30 minutes per file
 
 export class SocraticEngine {
   private sessions = new Map<string, SocraticSession>();
+  private fileCooldowns = new Map<string, number>(); // filePath → last closed timestamp
 
   constructor(
     private archivist: Archivist,
@@ -25,6 +27,13 @@ export class SocraticEngine {
 
   async startSession(gate: SocraticGateEvent): Promise<void> {
     if (!this.config.socraticMode) return;
+
+    // Guard: respect per-file cooldown after a session completes
+    const lastClosed = this.fileCooldowns.get(gate.filePath);
+    if (lastClosed && Date.now() - lastClosed < COOLDOWN_MS) {
+      console.log(`[Socratic] Cooldown active for ${gate.filePath} — skipping`);
+      return;
+    }
 
     // Guard: skip if already have an open session for this file
     for (const existing of this.sessions.values()) {
@@ -202,6 +211,7 @@ export class SocraticEngine {
       totalTurns: session.history.filter((t) => t.role === "question").length,
     };
     eventBus.emitSocraticResult(result);
+    this.fileCooldowns.set(session.filePath, Date.now());
     this.sessions.delete(sessionId);
     console.log(`[Socratic] Session ${sessionId} skipped.`);
   }
@@ -219,6 +229,7 @@ export class SocraticEngine {
       totalTurns: session.history.filter((t) => t.role === "question").length,
     };
     eventBus.emitSocraticResult(result);
+    this.fileCooldowns.set(session.filePath, Date.now());
     this.sessions.delete(session.id);
     console.log(`[Socratic] Session ${session.id} closed — passed=${passed}`);
   }
