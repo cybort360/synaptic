@@ -18,7 +18,10 @@ export class Archivist {
   private batchInterval: NodeJS.Timeout | null = null;
   private recentConceptHistory: string[][] = [];
 
+  private config: SynapticConfig;
+
   constructor(config: SynapticConfig) {
+    this.config = config;
     this.db = new SynapticDB(config.dbPath);
     this.compressor = new Compressor(config.ollamaBaseUrl, config.ollamaModel, config.visionModel);
     this.embedder = new Embedder();
@@ -53,6 +56,10 @@ export class Archivist {
       this.processBatch();
     }, 3000);
 
+    // Prune old events once on startup, then every 24 hours
+    this.pruneEvents();
+    setInterval(() => this.pruneEvents(), 24 * 60 * 60 * 1000);
+
     console.log("[Archivist] Ready to receive and compress events");
   }
 
@@ -86,7 +93,9 @@ export class Archivist {
           compressed.error_verbatim || "",
         ].join(" ");
 
-        compressed.embedding = await this.embed(textForEmbedding);
+        const rawEmbed = await this.embed(textForEmbedding);
+        // Round to 4 decimal places — halves storage size with negligible accuracy loss
+        compressed.embedding = rawEmbed.map((v) => Math.round(v * 10000) / 10000);
 
         this.db.insertEvent(compressed);
         this.trackConcepts(compressed.concepts);
@@ -161,6 +170,11 @@ export class Archivist {
 
   getConnectionsForEvent(eventId: string): Connection[] {
     return this.db.getConnectionsForEvent(eventId);
+  }
+
+  private pruneEvents(): void {
+    const pruned = this.db.pruneOldEvents(this.config.retentionDays);
+    if (pruned > 0) console.log(`[Archivist] Pruned ${pruned} old events`);
   }
 
   getQueueLength(): number {
